@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: ConfigServer
+  profiles:
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: /Users/yairtejedahotmail.com/IdeaProjects/mapacheBigoton/Practica/ConfigServer/src/main/resources/config
+
+server:
+  port: 8888
