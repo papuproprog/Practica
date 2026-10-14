@@ -1,0 +1,1 @@
+`` docker compuse up -d``
