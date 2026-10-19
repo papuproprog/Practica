@@ -1,0 +1,39 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: client-service
+              uri: lb://CLIENT-SERVICE
+              predicates:
+                - Path=/api/clients/**
+
+            - id: date-service
+              uri: lb://DATE-SERVICE
+              predicates:
+                - Path=/api/dates/**
+
+            - id: eureka-server
+              uri: http://service-discovery:8761
+              predicates:
+                - Path=/eureka/main
+              filters:
+                - SetPath=/
+
+            - id: eureka-server-static
+              uri: http://service-discovery:8761
+              predicates:
+                - Path=/eureka/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
