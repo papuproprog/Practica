@@ -4,12 +4,14 @@ import com.mishoo.dates.models.Date;
 
 import java.time.LocalDateTime;
 
-public record DateResponse(Long id,
-                           Long barber,
-                           Long client,
-                           DataStatus status,
-                           LocalDateTime dateTime) {
-
+public record DateResponse(
+        Long id,
+        Long barber,
+        Long client,
+        DataStatus status,
+        BarberServiceType service,
+        LocalDateTime dateTime
+) {
 
     public static DateResponse fromEntity(Date date) {
         return new DateResponse(
@@ -17,8 +19,9 @@ public record DateResponse(Long id,
                 date.getBarber(),
                 date.getClient(),
                 date.getStatus(),
-                date.getDateTime());
+                date.getService(),
+                date.getDateTime()
+        );
     }
-
 
 }

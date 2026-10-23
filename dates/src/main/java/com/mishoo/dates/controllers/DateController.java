@@ -1,6 +1,5 @@
 package com.mishoo.dates.controllers;
 
-import com.mishoo.dates.models.Date;
 import com.mishoo.dates.schemas.DateRequest;
 import com.mishoo.dates.schemas.DateResponse;
 import com.mishoo.dates.services.DateService;
@@ -39,7 +38,7 @@ public class DateController {
 
     @PutMapping("/{id}")
     public ResponseEntity<DateResponse> update(@PathVariable Long id, @Valid @RequestBody DateRequest dateRequest) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(dateService.change(id,dateRequest));
+        return ResponseEntity.ok(dateService.change(id, dateRequest));
     }
 
 

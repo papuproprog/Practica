@@ -17,6 +17,16 @@ spring:
               predicates:
                 - Path=/api/dates/**
 
+            - id: barber-service
+              uri: lb://BARBER-SERVICE
+              predicates:
+                - Path=/api/barbers/**
+
+            - id: security-service
+              uri: lb://SECURITY-SERVICE
+              predicates:
+                - Path=/api/auth/**
+
             - id: eureka-server
               uri: http://localhost:8761
               predicates:
