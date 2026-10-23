@@ -1,0 +1,4 @@
+CREATE DATABASE clientdb;
+CREATE DATABASE barberdb;
+CREATE DATABASE datedb;
+CREATE DATABASE securitydb;

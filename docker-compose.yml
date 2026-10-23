@@ -8,11 +8,17 @@ services:
       PGDATA: /data/postgres
     volumes:
       - postgres:/data/postgres
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5433:5432"
     networks:
       - backend
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USERNAME:-admin}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   pgadmin:
     container_name: pgadmin
@@ -37,8 +43,17 @@ services:
       - "8888:8888"
     environment:
       SPRING_PROFILES_ACTIVE: docker,native
+    volumes:
+      - ./configServer/src/main/resources/config:/config
     networks:
       - backend
+    healthcheck:
+      test: [ "CMD","wget","--spider","http://localhost:8888/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
 
   service-discovery:
     build: ./eureka
@@ -47,6 +62,13 @@ services:
       - "8761:8761"
     networks:
       - backend
+    healthcheck:
+      test: ["CMD","wget","--spider","http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
 
   gateway:
     build: ./gateway
@@ -58,8 +80,129 @@ services:
     networks:
       - backend
     depends_on:
-      - service-discovery
-      - config-server
+      service-discovery:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD","wget","--spider","http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  date-service:
+    build: ./dates
+    container_name: date-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_USER: ${POSTGRES_USERNAME:-admin}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+    networks:
+      - backend
+    depends_on:
+      service-discovery:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD","wget","--spider","http://localhost:8081/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  client-service:
+    build: ./clients
+    container_name: client-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_USER: ${POSTGRES_USERNAME:-admin}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+    networks:
+      - backend
+    depends_on:
+      service-discovery:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD","wget","--spider","http://localhost:8082/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+
+  barber-service:
+    build: ./barbers
+    container_name: barber-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_USER: ${POSTGRES_USERNAME:-admin}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+    networks:
+      - backend
+    depends_on:
+      service-discovery:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD","wget","--spider","http://localhost:8083/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  security-service:
+    build: ./security
+    container_name: security-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_USER: ${POSTGRES_USERNAME:-admin}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+    networks:
+      - backend
+    depends_on:
+      service-discovery:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD","wget","--spider","http://localhost:8084/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    build: ./FrontEnd/practica
+    container_name: frontend
+    ports:
+      - "4200:4200"
+    networks:
+      - backend
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
 
 
 
@@ -68,10 +211,7 @@ networks:
     driver: bridge
 
 
-
-
-
 volumes:
   postgres:
   pgadmin:
-
+  config-server:
