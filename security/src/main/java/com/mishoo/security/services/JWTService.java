@@ -23,10 +23,15 @@ public class JWTService {
     @Value("${jwt.expiration-ms:86400000}")
     private long expirationMs;
 
-    public String generateToken(String username, String role) {
+    public String generateToken(String username, String role, String branch) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
+        claims.put("branch", branch != null && !branch.isBlank() ? branch : "centro");
         return createToken(claims, username);
+    }
+
+    public String generateToken(String username, String role) {
+        return generateToken(username, role, "centro");
     }
 
     private String createToken(Map<String, Object> claims, String username) {
@@ -55,9 +60,13 @@ public class JWTService {
         return role != null ? role.toString() : "ADMIN";
     }
 
+    public String extractBranch(String token) {
+        Object branch = validateToken(token).getBody().get("branch");
+        return branch != null ? branch.toString() : "centro";
+    }
+
     private Key getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
-
 }

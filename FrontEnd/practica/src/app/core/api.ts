@@ -56,7 +56,21 @@ export interface AuthResponse {
   token: string;
   email: string;
   role: string;
+  branch?: string;
   tokenType: string;
+}
+
+export interface UserAccount {
+  id: number;
+  email: string;
+  role: string;
+  branch: string;
+}
+
+export interface UserSession {
+  email: string;
+  role: string;
+  branch?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -64,7 +78,7 @@ export class Api {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = 'http://localhost:8080/api';
 
-  private readonly currentUser = signal<{ email: string; role: string } | null>(this.readUser());
+  private readonly currentUser = signal<UserSession | null>(this.readUser());
   readonly user = this.currentUser.asReadonly();
   readonly loggedIn = computed(() => !!this.currentUser());
 
@@ -84,20 +98,23 @@ export class Api {
   login(email: string, password: string): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/auth/login`, { email, password }).pipe(
       tap(result => {
+        const branch = (result.branch || 'centro').toLowerCase();
         localStorage.setItem('barber-token', result.token);
-        localStorage.setItem('barber-user', JSON.stringify({ email: result.email, role: result.role }));
-        this.currentUser.set({ email: result.email, role: result.role });
+        localStorage.setItem('barber-user', JSON.stringify({ email: result.email, role: result.role, branch }));
+        this.setBranch(branch);
+        this.currentUser.set({ email: result.email, role: result.role, branch });
       })
     );
   }
 
-  register(email: string, password: string): Observable<unknown> {
-    return this.http.post(`${this.baseUrl}/auth/register`, { email, password });
+  register(email: string, password: string, branch = 'centro'): Observable<unknown> {
+    return this.http.post(`${this.baseUrl}/auth/register`, { email, password, branch });
   }
 
   logout(): void {
     localStorage.removeItem('barber-token');
     localStorage.removeItem('barber-user');
+    localStorage.removeItem('barber-branch');
     this.currentUser.set(null);
   }
 
@@ -108,6 +125,15 @@ export class Api {
 
   createBranch(branch: Branch): Observable<Branch> {
     return this.http.post<Branch>(`${this.baseUrl}/branches`, branch);
+  }
+
+  // Users & Admin Accounts
+  getUsers(): Observable<UserAccount[]> {
+    return this.http.get<UserAccount[]>(`${this.baseUrl}/auth/users`);
+  }
+
+  createAdmin(payload: { email: string; password: string; branch: string; role?: string }): Observable<UserAccount> {
+    return this.http.post<UserAccount>(`${this.baseUrl}/auth/register`, payload);
   }
 
   // Clients
@@ -166,7 +192,7 @@ export class Api {
     return this.http.delete<void>(`${this.baseUrl}/dates/${id}`);
   }
 
-  private readUser(): { email: string; role: string } | null {
+  private readUser(): UserSession | null {
     try {
       return JSON.parse(localStorage.getItem('barber-user') ?? 'null');
     } catch {

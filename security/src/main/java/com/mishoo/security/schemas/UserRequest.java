@@ -14,7 +14,8 @@ public record UserRequest(
         @Size(min = 6, message = "Password must be at least 6 characters")
         String password,
 
-        String role
+        String role,
+        String branch
 ) {
 
     public User toEntity() {
@@ -22,6 +23,7 @@ public record UserRequest(
         user.setEmail(this.email);
         user.setPassword(this.password);
         user.setRole(this.role != null && !this.role.isBlank() ? this.role : "ADMIN");
+        user.setBranch(this.branch != null && !this.branch.isBlank() ? this.branch : "centro");
         return user;
     }
 

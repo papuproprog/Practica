@@ -49,6 +49,11 @@ export class HomePageComponent implements OnInit {
       return;
     }
 
+    if (this.api.user()?.role === 'SUPERADMIN') {
+      void this.router.navigate(['/global-admin']);
+      return;
+    }
+
     this.route.queryParamMap.subscribe(params => {
       const tab = params.get('tab');
       if (tab === 'barbers' || tab === 'services' || tab === 'agenda') {

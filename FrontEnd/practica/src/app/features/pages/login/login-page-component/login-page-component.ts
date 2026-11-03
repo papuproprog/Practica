@@ -16,7 +16,6 @@ export class LoginPageComponent implements OnInit {
 
   email = '';
   password = '';
-  branch: 'centro' | 'norte' = 'centro';
   error = '';
   loading = false;
   registering = false;
@@ -24,21 +23,11 @@ export class LoginPageComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.api.loggedIn()) {
-      void this.router.navigate(['/home']);
-    }
-  }
-
-  selectBranch(b: 'centro' | 'norte'): void {
-    this.branch = b;
-    this.error = '';
-  }
-
-  onEmailChange(): void {
-    const val = this.email.toLowerCase();
-    if (val.includes('norte')) {
-      this.branch = 'norte';
-    } else if (val.includes('centro')) {
-      this.branch = 'centro';
+      if (this.api.user()?.role === 'SUPERADMIN') {
+        void this.router.navigate(['/global-admin']);
+      } else {
+        void this.router.navigate(['/home']);
+      }
     }
   }
 
@@ -53,20 +42,17 @@ export class LoginPageComponent implements OnInit {
     this.loading = true;
     this.error = '';
 
-    // Assign tenant branch header prior to auth call
-    this.api.setBranch(this.branch);
-
     if (this.registering) {
       this.api.register(this.email.trim(), this.password).subscribe({
         next: () => {
           this.loading = false;
           this.registering = false;
-          this.success = `Cuenta creada para ${this.branch === 'norte' ? 'Sucursal Norte' : 'Sucursal Centro'}. Ya puedes iniciar sesión.`;
+          this.success = 'Cuenta creada exitosamente. Ya puedes iniciar sesión.';
           this.changeDetector.markForCheck();
         },
         error: err => {
           this.loading = false;
-          this.error = typeof err.error === 'string' ? err.error : 'No se pudo crear la cuenta en esta sucursal. Verifica los datos.';
+          this.error = typeof err.error === 'string' ? err.error : 'No se pudo crear la cuenta. Verifica los datos.';
           this.changeDetector.markForCheck();
         }
       });
@@ -74,16 +60,20 @@ export class LoginPageComponent implements OnInit {
     }
 
     this.api.login(this.email.trim(), this.password).subscribe({
-      next: () => {
+      next: res => {
         this.loading = false;
         this.changeDetector.markForCheck();
-        void this.router.navigate(['/home']);
+        if (res.role === 'SUPERADMIN') {
+          void this.router.navigate(['/global-admin']);
+        } else {
+          void this.router.navigate(['/home']);
+        }
       },
       error: err => {
         this.loading = false;
         this.error = err.status === 0
           ? 'No se pudo conectar con el servidor. Comprueba que el backend esté iniciado.'
-          : `Credenciales inválidas para ${this.branch === 'norte' ? 'Sucursal Norte' : 'Sucursal Centro'}.`;
+          : 'Credenciales inválidas. Verifica tu correo y contraseña.';
         this.changeDetector.markForCheck();
       }
     });

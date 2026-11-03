@@ -34,6 +34,8 @@ public class User {
 
     private String role;
 
+    private String branch;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
@@ -44,6 +46,9 @@ public class User {
         this.email = request.email();
         if (request.role() != null && !request.role().isBlank()) {
             this.role = request.role();
+        }
+        if (request.branch() != null && !request.branch().isBlank()) {
+            this.branch = request.branch();
         }
     }
 

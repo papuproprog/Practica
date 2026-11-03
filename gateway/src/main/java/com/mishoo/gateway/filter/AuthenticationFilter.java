@@ -50,11 +50,19 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                 jwtUtil.validateToken(token);
                 Claims claims = jwtUtil.getClaims(token);
 
-                ServerHttpRequest mutatedRequest = request.mutate()
+                ServerHttpRequest.Builder reqBuilder = request.mutate()
                         .header("X-User-Email", claims.getSubject())
-                        .header("X-User-Role", String.valueOf(claims.get("role")))
-                        .build();
+                        .header("X-User-Role", String.valueOf(claims.get("role")));
 
+                String existingBranch = request.getHeaders().getFirst("X-Branch-Id");
+                if (existingBranch == null || existingBranch.isBlank()) {
+                    Object branchClaim = claims.get("branch");
+                    if (branchClaim != null && !String.valueOf(branchClaim).isBlank()) {
+                        reqBuilder.header("X-Branch-Id", String.valueOf(branchClaim));
+                    }
+                }
+
+                ServerHttpRequest mutatedRequest = reqBuilder.build();
                 return chain.filter(exchange.mutate().request(mutatedRequest).build());
             } catch (Exception e) {
                 return onError(exchange, "Invalid or expired token", HttpStatus.UNAUTHORIZED);
@@ -68,14 +76,13 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(httpStatus);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        String body = "{\"status\":" + httpStatus.value() + ",\"error\":\"" + httpStatus.getReasonPhrase() + "\",\"message\":\"" + message + "\"}";
+        String body = String.format("{\"error\": \"%s\", \"status\": %d}", message, httpStatus.value());
         DataBuffer buffer = response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8));
         return response.writeWith(Mono.just(buffer));
     }
 
     @Override
     public int getOrder() {
-        return -1;
+        return -100;
     }
-
 }

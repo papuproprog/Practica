@@ -61,6 +61,11 @@ export class AppointmentPageComponent implements OnInit {
       void this.router.navigate(['/login']);
       return;
     }
+
+    if (this.api.user()?.role === 'SUPERADMIN') {
+      void this.router.navigate(['/global-admin']);
+      return;
+    }
     this.loadData();
   }
 

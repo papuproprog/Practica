@@ -1,15 +1,20 @@
 package com.mishoo.security.schemas;
 
 import com.mishoo.security.models.User;
+import com.mishoo.security.multitenancy.TenantContext;
 
 public record UserResponse(
         Long id,
         String email,
-        String role
+        String role,
+        String branch
 ) {
 
     public static UserResponse fromEntity(User user) {
-        return new UserResponse(user.getId(), user.getEmail(), user.getRole());
+        String b = (user.getBranch() != null && !user.getBranch().isBlank())
+                ? user.getBranch()
+                : TenantContext.getCurrentTenant();
+        return new UserResponse(user.getId(), user.getEmail(), user.getRole(), b);
     }
 
 }
