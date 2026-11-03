@@ -7,7 +7,16 @@ spring:
     config:
       server:
         native:
-          search-locations: /Users/yairtejedahotmail.com/IdeaProjects/mapacheBigoton/Practica/ConfigServer/src/main/resources/config
+          search-locations: classpath:/config
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
 
 server:
   port: 8888

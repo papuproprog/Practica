@@ -2,12 +2,19 @@ spring:
   application:
     name: Eureka
 
-
 server:
   port: 8761
-
 
 eureka:
   client:
     register-with-eureka: false
     fetch-registry: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

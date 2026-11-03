@@ -1,0 +1,249 @@
+<div class="min-h-screen bg-[#f5f1eb] text-[#0b1437] lg:flex">
+  <!-- Sidebar -->
+  <aside class="flex flex-wrap items-center gap-3 bg-[#0b1437] p-4 text-white lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:flex-col lg:items-stretch lg:p-5">
+    <div>
+      <span class="font-display text-2xl tracking-wide">BARBER<span class="text-cyan-300">.</span></span>
+      <span class="ml-2 rounded bg-amber-400/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">Global</span>
+    </div>
+
+    <!-- Role Indicator -->
+    <div class="my-2 rounded-xl bg-white/10 p-3 lg:my-4">
+      <p class="text-[10px] font-semibold uppercase tracking-wider text-cyan-300">Nivel de Acceso</p>
+      <p class="mt-1 font-display text-base font-bold text-white tracking-wide">Administrador Global</p>
+      <p class="mt-0.5 text-[10px] text-white/50">Control de sucursales y cuentas</p>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex gap-2 lg:flex-col">
+      <button
+        type="button"
+        (click)="currentTab = 'branches'"
+        [class.bg-cyan-500]="currentTab === 'branches'"
+        [class.text-white]="currentTab === 'branches'"
+        [class.text-white/70]="currentTab !== 'branches'"
+        class="rounded-xl px-4 py-3 text-left text-sm font-medium hover:bg-white/10"
+      >
+        Sucursales ({{branches.length}})
+      </button>
+      <button
+        type="button"
+        (click)="currentTab = 'admins'"
+        [class.bg-cyan-500]="currentTab === 'admins'"
+        [class.text-white]="currentTab === 'admins'"
+        [class.text-white/70]="currentTab !== 'admins'"
+        class="rounded-xl px-4 py-3 text-left text-sm font-medium hover:bg-white/10"
+      >
+        Administradores ({{admins.length}})
+      </button>
+    </nav>
+
+    <!-- User & Logout -->
+    <div class="ml-auto flex items-center gap-2 text-right text-xs text-white/70 lg:ml-0 lg:mt-auto">
+      <span class="max-w-36 truncate">{{api.user()?.email}}</span>
+      <button type="button" (click)="logout()" class="rounded-lg px-2.5 py-1.5 hover:bg-white/10">Salir</button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="min-w-0 flex-1 px-4 py-6 sm:px-8 lg:px-10 lg:py-8">
+    <div class="mx-auto max-w-5xl">
+      <header class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[.2em] text-cyan-700">Consola Central</p>
+          <h1 class="mt-1 font-display text-3xl sm:text-4xl">
+            {{currentTab === 'branches' ? 'Gestión de Sucursales' : 'Cuentas de Administradores'}}
+          </h1>
+          <p class="mt-1 text-sm text-stone-500">
+            {{currentTab === 'branches'
+              ? 'Da de alta nuevas sucursales. Cada una opera de manera independiente con su propia base de datos.'
+              : 'Asigna administradores exclusivos a cada sucursal para mantener el aislamiento de datos.'}}
+          </p>
+        </div>
+      </header>
+
+      @if(error){
+        <p role="alert" class="mt-6 rounded-xl bg-rose-50 p-4 text-sm text-rose-700">{{error}}</p>
+      }
+      @if(notice){
+        <p role="status" class="mt-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-700">{{notice}}</p>
+      }
+
+      <!-- TAB 1: SUCURSALES -->
+      @if(currentTab === 'branches'){
+        <section class="mt-8 space-y-6">
+          <!-- Form to create branch -->
+          <article class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+            <h2 class="font-display text-xl">Registrar Nueva Sucursal</h2>
+            <p class="mt-1 text-xs text-stone-500">Se creará el registro de la sucursal y su partición de datos aislada.</p>
+            <form (ngSubmit)="createBranch()" class="mt-4 space-y-4">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="text-xs font-semibold text-stone-700">Identificador único (slug)
+                  <input
+                    [(ngModel)]="branchId"
+                    name="branchId"
+                    placeholder="ej. poniente, oriente, monterrey"
+                    required
+                    class="mt-1 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500"
+                  />
+                </label>
+                <label class="text-xs font-semibold text-stone-700">Nombre de la sucursal
+                  <input
+                    [(ngModel)]="branchName"
+                    name="branchName"
+                    placeholder="ej. Sucursal Poniente"
+                    required
+                    class="mt-1 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500"
+                  />
+                </label>
+                <label class="text-xs font-semibold text-stone-700">Dirección
+                  <input
+                    [(ngModel)]="branchAddress"
+                    name="branchAddress"
+                    placeholder="ej. Av. Las Palmas 500"
+                    class="mt-1 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500"
+                  />
+                </label>
+                <label class="text-xs font-semibold text-stone-700">Teléfono de contacto
+                  <input
+                    [(ngModel)]="branchPhone"
+                    name="branchPhone"
+                    placeholder="ej. 555-333-4444"
+                    class="mt-1 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500"
+                  />
+                </label>
+              </div>
+              <div class="flex justify-end">
+                <button
+                  type="submit"
+                  [disabled]="savingBranch"
+                  class="rounded-xl bg-cyan-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-cyan-700 disabled:opacity-60"
+                >
+                  {{savingBranch ? 'Creando sucursal…' : 'Registrar Sucursal'}}
+                </button>
+              </div>
+            </form>
+          </article>
+
+          <!-- List of Branches -->
+          <div>
+            <h3 class="mb-3 font-display text-lg">Sucursales Activas</h3>
+            @if(loading){
+              <p class="rounded-2xl bg-white p-6 text-sm text-stone-500">Cargando sucursales…</p>
+            } @else if(!branches.length){
+              <p class="rounded-2xl bg-white p-6 text-sm text-stone-500">No hay sucursales registradas aún.</p>
+            } @else {
+              <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                @for(b of branches; track b.id){
+                  <article class="flex flex-col justify-between rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+                    <div>
+                      <div class="flex items-center justify-between">
+                        <span class="rounded bg-cyan-100 px-2 py-0.5 text-xs font-bold uppercase text-cyan-800">{{b.id}}</span>
+                        <span class="text-[11px] text-stone-400">BD independiente</span>
+                      </div>
+                      <h4 class="mt-2 font-display text-lg font-bold text-stone-900">{{b.name}}</h4>
+                      <p class="mt-1 text-xs text-stone-600">{{b.address || 'Sin dirección registrada'}}</p>
+                      @if(b.phone){
+                        <p class="mt-1 text-xs text-stone-400">Tel: {{b.phone}}</p>
+                      }
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- TAB 2: ADMINISTRADORES DE SUCURSAL -->
+      @if(currentTab === 'admins'){
+        <section class="mt-8 space-y-6">
+          <!-- Form to create admin -->
+          <article class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+            <h2 class="font-display text-xl">Crear Administrador de Sucursal</h2>
+            <p class="mt-1 text-xs text-stone-500">El administrador pertenecerá exclusivamente a la sucursal seleccionada.</p>
+            <form (ngSubmit)="createAdmin()" class="mt-4 space-y-4">
+              <div class="grid gap-4 sm:grid-cols-3">
+                <label class="text-xs font-semibold text-stone-700">Correo electrónico
+                  <input
+                    [(ngModel)]="adminEmail"
+                    name="adminEmail"
+                    type="email"
+                    placeholder="ej. admin@sucursal.com"
+                    required
+                    class="mt-1 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500"
+                  />
+                </label>
+                <label class="text-xs font-semibold text-stone-700">Contraseña (mínimo 6 caracteres)
+                  <input
+                    [(ngModel)]="adminPassword"
+                    name="adminPassword"
+                    type="password"
+                    minlength="6"
+                    placeholder="••••••••"
+                    required
+                    class="mt-1 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500"
+                  />
+                </label>
+                <label class="text-xs font-semibold text-stone-700">Sucursal asignada
+                  <select
+                    [(ngModel)]="adminBranch"
+                    name="adminBranch"
+                    required
+                    class="mt-1 h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm outline-none focus:border-cyan-500"
+                  >
+                    @for(b of branches; track b.id){
+                      <option [value]="b.id">{{b.name}} ({{b.id}})</option>
+                    }
+                  </select>
+                </label>
+              </div>
+              <div class="flex justify-end">
+                <button
+                  type="submit"
+                  [disabled]="savingAdmin"
+                  class="rounded-xl bg-cyan-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-cyan-700 disabled:opacity-60"
+                >
+                  {{savingAdmin ? 'Guardando administrador…' : 'Crear Administrador'}}
+                </button>
+              </div>
+            </form>
+          </article>
+
+          <!-- List of Admins -->
+          <div>
+            <h3 class="mb-3 font-display text-lg">Administradores del Sistema</h3>
+            @if(loading){
+              <p class="rounded-2xl bg-white p-6 text-sm text-stone-500">Cargando administradores…</p>
+            } @else if(!admins.length){
+              <p class="rounded-2xl bg-white p-6 text-sm text-stone-500">No hay administradores registrados.</p>
+            } @else {
+              <div class="space-y-3">
+                @for(a of admins; track a.id){
+                  <article class="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5 sm:p-5">
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <p class="font-semibold text-stone-900">{{a.email}}</p>
+                        <span class="rounded px-2 py-0.5 text-[10px] font-bold"
+                          [class.bg-purple-100]="a.role === 'SUPERADMIN'"
+                          [class.text-purple-800]="a.role === 'SUPERADMIN'"
+                          [class.bg-cyan-100]="a.role !== 'SUPERADMIN'"
+                          [class.text-cyan-800]="a.role !== 'SUPERADMIN'">
+                          {{a.role}}
+                        </span>
+                      </div>
+                      <p class="mt-1 text-xs text-stone-500">
+                        Sucursal vinculada: <strong class="text-stone-700">{{branchNameFor(a.branch)}} ({{a.branch}})</strong>
+                      </p>
+                    </div>
+                    <span class="text-xs text-stone-400">ID #{{a.id}}</span>
+                  </article>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+    </div>
+  </main>
+</div>

@@ -5,7 +5,18 @@ spring:
     config:
       server:
         native:
-          search-locations: classpath:/config
+          search-locations: file:/config,classpath:/config
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
 
 server:
   port: 8888

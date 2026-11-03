@@ -1,6 +1,16 @@
+FROM eclipse-temurin:17-ubi9-minimal AS builder
+WORKDIR /app
+
+COPY .mvn/ .mvn/
+COPY mvnw pom.xml ./
+RUN chmod +x mvnw
+RUN ./mvnw dependency:go-offline -B
+
+COPY src ./src
+RUN ./mvnw clean package -DskipTests
+
 FROM eclipse-temurin:17-ubi9-minimal
 WORKDIR /app
-COPY target/*.jar app.jar
+COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8761
-ENTRYPOINT ["java", "-jar","app.jar"]
-
+ENTRYPOINT ["java", "-jar", "app.jar"]
