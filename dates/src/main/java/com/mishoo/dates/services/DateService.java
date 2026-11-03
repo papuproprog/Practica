@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -60,13 +61,20 @@ public class DateService {
         Date date = dateRepository.findById(id)
                 .orElseThrow(DateNotFoundException::new);
 
-        validateDateRangeAndNotice(dateRequest.dateTime());
-        validateBusinessHours(dateRequest.dateTime(), dateRequest.service());
-        validateClientAvailability(dateRequest.client(), dateRequest.dateTime(), id);
-        validateBarberAvailabilityAndOverlap(dateRequest.barber(), dateRequest.dateTime(), dateRequest.service(), id);
+        boolean scheduleChanged = !Objects.equals(date.getBarber(), dateRequest.barber())
+                || !Objects.equals(date.getClient(), dateRequest.client())
+                || !Objects.equals(date.getService(), dateRequest.service())
+                || !Objects.equals(date.getDateTime(), dateRequest.dateTime());
 
-        clientAdapter.getById(dateRequest.client());
-        barberAdapter.getById(dateRequest.barber());
+        if (scheduleChanged) {
+            validateDateRangeAndNotice(dateRequest.dateTime());
+            validateBusinessHours(dateRequest.dateTime(), dateRequest.service());
+            validateClientAvailability(dateRequest.client(), dateRequest.dateTime(), id);
+            validateBarberAvailabilityAndOverlap(dateRequest.barber(), dateRequest.dateTime(), dateRequest.service(), id);
+
+            clientAdapter.getById(dateRequest.client());
+            barberAdapter.getById(dateRequest.barber());
+        }
 
         date.updateFrom(dateRequest);
         Date updatedDate = dateRepository.save(date);

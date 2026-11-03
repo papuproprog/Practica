@@ -1,7 +1,6 @@
 package com.mishoo.dates.schemas;
 
 import com.mishoo.dates.models.Date;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
@@ -21,7 +20,6 @@ public record DateRequest(
         BarberServiceType service,
 
         @NotNull(message = "Date time can not be empty")
-        @Future(message = "Past dates are not allowed")
         LocalDateTime dateTime
 
 ) {

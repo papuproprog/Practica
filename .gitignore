@@ -4,3 +4,7 @@
 .agents/
 skills-lock.json
 **/target/
+<<<<<<< HEAD
+=======
+/.env
+>>>>>>> main

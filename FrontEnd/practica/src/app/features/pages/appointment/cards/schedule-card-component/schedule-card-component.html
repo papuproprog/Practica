@@ -1,0 +1,41 @@
+<app-card>
+      <app-card-header><span title>Fecha y asignación</span><span aside>Paso 1 de 3</span></app-card-header>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <app-form-field>
+          <span label>Fecha</span>
+          <div class="relative">
+            
+            <input appControl class="pl-10" readonly />
+          </div>
+        </app-form-field>
+
+        <app-form-field>
+          <span label>Hora de inicio</span>
+          <div class="relative">
+            
+            <input appControl class="pl-10 [&::-webkit-calendar-picker-indicator]:hidden" type="time" />
+          </div>
+        </app-form-field>
+
+        <app-form-field>
+          <span label>Barbero</span>
+          <div class="relative">
+           
+            <select appControl class="appearance-none pl-10 pr-10"></select>
+            
+          </div>
+        </app-form-field>
+
+        <app-form-field>
+          <span label>Duración</span>
+          <div class="relative">
+            
+            <select appControl class="appearance-none pl-10 pr-10"></select>
+            
+          </div>
+        </app-form-field>
+      </div>
+
+      
+    </app-card>

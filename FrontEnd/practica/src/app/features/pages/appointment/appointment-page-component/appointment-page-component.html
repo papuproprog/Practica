@@ -1,0 +1,44 @@
+<div class="min-h-screen bg-[#f5f1eb] text-[#0b1437] antialiased lg:flex">
+  <aside class="flex flex-wrap items-center gap-3 bg-[#0b1437] p-4 text-white lg:sticky lg:top-0 lg:h-screen lg:w-60 lg:flex-col lg:items-stretch lg:p-5">
+    <a routerLink="/home" class="font-display text-2xl">BARBER<span class="text-cyan-300">.</span></a>
+    <nav class="flex gap-2 lg:mt-8 lg:flex-col">
+      <a routerLink="/home" class="rounded-xl px-4 py-3 text-sm text-white/70 hover:bg-white/10">Agenda</a>
+      <a routerLink="/appointments" class="rounded-xl bg-cyan-500 px-4 py-3 text-sm font-medium">Nueva cita</a>
+    </nav>
+    <button type="button" (click)="logout()" class="ml-auto rounded-lg px-3 py-2 text-sm text-white/70 hover:bg-white/10 lg:mt-auto">Cerrar sesión</button>
+  </aside>
+  <main class="min-w-0 flex-1 px-4 py-6 sm:px-8 lg:px-10 lg:py-8">
+    <div class="mx-auto max-w-6xl">
+      <header class="flex flex-wrap items-end justify-between gap-4">
+        <div><p class="text-xs font-semibold uppercase tracking-[.2em] text-cyan-700">Agenda · Administración</p><h1 class="mt-1 font-display text-3xl sm:text-4xl">{{editId?'Editar cita':'Agendar cita'}}</h1><p class="mt-1 text-sm text-stone-500">Captura los datos y guarda la cita en la agenda.</p></div>
+        <a routerLink="/home" class="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-medium hover:bg-stone-50">Volver a la agenda</a>
+      </header>
+      @if(error){<p role="alert" class="mt-5 rounded-xl bg-rose-50 p-4 text-sm text-rose-700">{{error}}</p>}
+      @if(notice){<p role="status" class="mt-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-700">{{notice}}</p>}
+      @if(loading){<p class="mt-8 text-sm text-stone-500">Cargando datos del backend…</p>} @else {
+      <form (ngSubmit)="save()" class="mt-7 grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div class="space-y-5">
+          <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 sm:p-6">
+            <div class="mb-5 flex items-center justify-between"><h2 class="font-display text-xl">Fecha y asignación</h2><span class="text-xs text-stone-400">Paso 1 · 3</span></div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="text-xs font-semibold">Fecha<input [(ngModel)]="date" name="date" type="date" required [min]="today" class="mt-2 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500"></label>
+              <label class="text-xs font-semibold">Hora de inicio<input [(ngModel)]="time" name="time" type="time" required class="mt-2 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500"></label>
+              <label class="text-xs font-semibold">Barbero<select [(ngModel)]="barberId" name="barber" required class="mt-2 h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm"><option [ngValue]="null" disabled>Selecciona un barbero</option>@for(b of barbers;track b.id){<option [ngValue]="b.id">{{b.name}} {{b.lastName}}</option>}</select></label>
+              <div class="rounded-lg bg-stone-50 p-3 text-xs text-stone-600">Duración estimada <strong class="float-right text-[#0b1437]">{{selectedService.duration}} minutos</strong></div>
+            </div>
+            @if(!barbers.length){<p class="mt-3 text-xs text-amber-700">No hay barberos registrados. Agrega barberos al servicio para poder agendar.</p>}
+          </section>
+          <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 sm:p-6">
+            <div class="mb-5 flex items-center justify-between"><h2 class="font-display text-xl">Cliente</h2><button type="button" (click)="newClient=!newClient" class="text-xs font-semibold text-cyan-700">{{newClient?'Elegir cliente existente':'+ Registrar cliente'}}</button></div>
+            @if(newClient){<div class="grid gap-4 sm:grid-cols-2"><label class="text-xs font-semibold">Nombre<input [(ngModel)]="clientName" name="clientName" class="mt-2 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm"></label><label class="text-xs font-semibold">Apellido<input [(ngModel)]="clientLastName" name="clientLastName" class="mt-2 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm"></label><label class="text-xs font-semibold sm:col-span-2">Teléfono<input [(ngModel)]="clientPhone" name="clientPhone" type="tel" placeholder="+5215551234567" class="mt-2 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm"></label></div>}
+            @else {<label class="text-xs font-semibold">Selecciona al cliente<select [(ngModel)]="clientId" name="client" required class="mt-2 h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm"><option [ngValue]="null" disabled>Selecciona un cliente</option>@for(c of clients;track c.id){<option [ngValue]="c.id">{{c.name}} {{c.lastName}} · {{c.phone}}</option>}</select></label>@if(!clients.length){<p class="mt-3 text-xs text-stone-500">Aún no hay clientes. Usa “Registrar cliente” para agregar uno.</p>}}</section>
+          <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 sm:p-6"><div class="mb-5 flex items-center justify-between"><h2 class="font-display text-xl">Servicio</h2><span class="text-xs text-stone-400">Paso 3 · 3</span></div><label class="text-xs font-semibold">Servicio<select [(ngModel)]="service" name="service" class="mt-2 h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm">@for(s of services;track s.id){<option [ngValue]="s.id">{{s.name}} · {{s.duration}} min</option>}</select></label></section>
+        </div>
+        <aside class="space-y-4 lg:sticky lg:top-6 lg:self-start"><section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5"><h2 class="font-display text-xl">Resumen</h2><p class="mt-4 text-sm font-semibold">{{newClient?(clientName+' '+clientLastName):clientNameFor(clientId||0)}}</p><dl class="mt-4 space-y-3 text-sm"><div class="flex justify-between gap-3"><dt class="text-stone-500">Barbero</dt><dd>{{barberId?barberNameFor(barberId):'Sin asignar'}}</dd></div><div class="flex justify-between gap-3"><dt class="text-stone-500">Fecha</dt><dd>{{date|date:'mediumDate'}}</dd></div><div class="flex justify-between gap-3"><dt class="text-stone-500">Hora</dt><dd>{{time}}</dd></div><div class="flex justify-between gap-3"><dt class="text-stone-500">Servicio</dt><dd class="text-right">{{selectedService.name}}</dd></div><div class="flex justify-between border-t border-stone-100 pt-3 font-semibold"><dt>Duración</dt><dd>{{selectedService.duration}} min</dd></div></dl>
+            @if(editId){<label class="mt-5 block text-xs font-semibold">Estado<select [(ngModel)]="status" name="status" class="mt-2 h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm"><option value="PENDING">Pendiente</option><option value="DONE">Completada</option><option value="CANCELLED">Cancelada</option></select></label>}
+          </section><button type="submit" [disabled]="saving" class="w-full rounded-xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-cyan-600 disabled:opacity-60">{{saving?'Guardando…':editId?'Guardar cambios':'Crear cita'}}</button></aside>
+      </form>}
+      <section class="mt-10"><h2 class="mb-4 font-display text-2xl">Citas recientes</h2>@if(!appointments.length && !loading){<p class="rounded-xl bg-white p-5 text-sm text-stone-500">Todavía no hay citas registradas.</p>}<div class="space-y-3">@for(a of appointments;track a.id){<article class="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5"><div><p class="font-semibold">{{clientNameFor(a.client)}} <span class="font-normal text-stone-500">· {{serviceName(a.service)}}</span></p><p class="mt-1 text-xs text-stone-500">{{a.dateTime|date:'medium'}} · {{barberNameFor(a.barber)}}</p></div><div class="flex items-center gap-2"><select [ngModel]="a.status" (ngModelChange)="changeStatus(a,$event)" [ngModelOptions]="{standalone:true}" class="rounded-lg border border-stone-200 bg-white px-2 py-2 text-xs"><option value="PENDING">Pendiente</option><option value="DONE">Completada</option><option value="CANCELLED">Cancelada</option></select><a [routerLink]="['/appointments']" [queryParams]="{id:a.id}" class="rounded-lg bg-stone-100 px-3 py-2 text-xs font-semibold hover:bg-stone-200">Editar</a><button type="button" (click)="cancel(a)" class="rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">Cancelar</button></div></article>}</div></section>
+    </div>
+  </main>
+</div>

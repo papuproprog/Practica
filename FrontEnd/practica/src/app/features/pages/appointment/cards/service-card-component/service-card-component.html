@@ -1,0 +1,27 @@
+<app-card>
+      <app-card-header><span title>Servicio</span><span aside>Paso 3 de 3</span></app-card-header>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <app-form-field>
+          <span label>Descripción</span>
+          <div class="relative">
+            
+            <select appControl class="appearance-none pl-10"></select>
+          </div>
+        </app-form-field>
+
+        <app-form-field>
+          <span label>Costo</span>
+          <div class="relative">
+            
+            <input appControl class="pl-10" readonly />
+          </div>
+        </app-form-field>
+      </div>
+
+      <app-form-field class="mt-4">
+        <span label>Notas internas</span>
+        <textarea appControl rows="3" class="min-h-24 resize-y"></textarea>
+        <span hint>Visible solo para el equipo.</span>
+      </app-form-field>
+    </app-card>
