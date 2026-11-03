@@ -10,6 +10,7 @@ import { Api, Branch, UserAccount } from '../../../../core/api';
   selector: 'app-global-admin-page',
   templateUrl: './global-admin-page-component.html',
 })
+
 export class GlobalAdminPageComponent implements OnInit {
   readonly api = inject(Api);
   private readonly router = inject(Router);
@@ -37,12 +38,16 @@ export class GlobalAdminPageComponent implements OnInit {
   savingAdmin = false;
 
   ngOnInit(): void {
+    console.log('loggedIn:', this.api.loggedIn());
+    console.log('user:', this.api.user());
+    console.log('role:', this.api.user()?.role);
+
     if (!this.api.loggedIn()) {
       void this.router.navigate(['/login']);
       return;
     }
 
-    if (this.api.user()?.role !== 'SUPERADMIN') {
+    if (this.api.user()?.role !== 'ADMIN') {
       void this.router.navigate(['/home']);
       return;
     }
