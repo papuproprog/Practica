@@ -1,5 +1,6 @@
 package com.mishoo.dates.clients;
 
+import com.mishoo.dates.multitenancy.TenantContext;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +27,13 @@ public class ClientsConfig {
         RestClient restClient = RestClient.builder()
                 .requestFactory(factory)
                 .requestInterceptor(new LoadBalancerInterceptor(loadBalancerClient))
+                .requestInterceptor((request, body, execution) -> {
+                    String tenant = TenantContext.getCurrentTenant();
+                    if (tenant != null && !tenant.isBlank()) {
+                        request.getHeaders().set("X-Branch-Id", tenant);
+                    }
+                    return execution.execute(request, body);
+                })
                 .baseUrl("http://client-service")
                 .defaultStatusHandler(HttpStatusCode::is4xxClientError, (req, res) -> {
                     throw new HttpClientErrorException(res.getStatusCode(), res.getStatusText());

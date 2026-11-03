@@ -17,6 +17,11 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(ServiceNotFoundException.class)
+    public ResponseEntity<String> handleServiceNotFoundException(ServiceNotFoundException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler(BarberAlreadyExistsException.class)
     public ResponseEntity<String> handleBarberAlreadyExistsException(BarberAlreadyExistsException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);

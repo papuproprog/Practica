@@ -1,5 +1,6 @@
 package com.mishoo.dates.schemas;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.mishoo.dates.models.Date;
 import jakarta.validation.constraints.NotNull;
 
@@ -17,7 +18,8 @@ public record DateRequest(
         DataStatus status,
 
         @NotNull(message = "Service can not be empty")
-        BarberServiceType service,
+        @JsonDeserialize(using = ServiceIdDeserializer.class)
+        Long service,
 
         @NotNull(message = "Date time can not be empty")
         LocalDateTime dateTime

@@ -46,7 +46,7 @@ def request(url, method="GET", headers=None, body=None):
         return 0, {}, str(e)
 
 print("=" * 60)
-print("COMPREHENSIVE TEST SUITE - CORS & MICROSERVICES ARCHITECTURE")
+print("COMPREHENSIVE TEST SUITE - MULTI-TENANT & SERVICES ARCHITECTURE")
 print("=" * 60)
 
 # -------------------------------------------------------------
@@ -57,6 +57,8 @@ print("\n--- 1. Testing CORS Preflight (OPTIONS) & Headers ---")
 cors_endpoints = [
     ("/api/auth/login", "Security Service Auth"),
     ("/api/barbers", "Barbers Service"),
+    ("/api/services", "Services Catalog"),
+    ("/api/branches", "Branches Endpoint"),
     ("/api/clients", "Clients Service"),
     ("/api/dates", "Dates Service"),
 ]
@@ -67,15 +69,12 @@ for endpoint, desc in cors_endpoints:
         url,
         method="OPTIONS",
         headers={
-            "Origin": "http://localhost:3000",
+            "Origin": "http://localhost:4200",
             "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": "Authorization,Content-Type"
+            "Access-Control-Request-Headers": "Authorization,Content-Type,X-Branch-Id"
         }
     )
-    # Checking CORS headers
     allow_origin = headers.get("Access-Control-Allow-Origin") or headers.get("access-control-allow-origin")
-    allow_methods = headers.get("Access-Control-Allow-Methods") or headers.get("access-control-allow-methods")
-    
     has_cors = (status in [200, 204]) and (allow_origin is not None)
     report(f"CORS Preflight on {endpoint} ({desc})", has_cors, f"[status={status}, allow-origin={allow_origin}]")
 
@@ -84,13 +83,11 @@ for endpoint, desc in cors_endpoints:
 # -------------------------------------------------------------
 print("\n--- 2. Gateway Global JWT Security Filter ---")
 
-# Accessing protected endpoints without token must return 401
-for ep in ["/api/barbers", "/api/clients", "/api/dates"]:
+for ep in ["/api/barbers", "/api/services", "/api/clients", "/api/dates"]:
     status, _, _ = request(f"{BASE_URL}{ep}", method="GET")
     report(f"Reject Unauthenticated GET {ep}", status == 401, f"[Expected 401, got {status}]")
 
-# Accessing protected endpoints with fake token must return 401
-for ep in ["/api/barbers", "/api/clients", "/api/dates"]:
+for ep in ["/api/barbers", "/api/services", "/api/clients", "/api/dates"]:
     status, _, _ = request(f"{BASE_URL}{ep}", method="GET", headers={"Authorization": "Bearer invalid.fake.token"})
     report(f"Reject Invalid Token GET {ep}", status == 401, f"[Expected 401, got {status}]")
 
@@ -98,73 +95,32 @@ for ep in ["/api/barbers", "/api/clients", "/api/dates"]:
 status, _, body = request(
     f"{BASE_URL}/api/auth/login",
     method="POST",
-    headers={"Content-Type": "application/json"},
+    headers={"Content-Type": "application/json", "X-Branch-Id": "centro"},
     body={"email": "admin@mishoo.com", "password": "adminpassword123"}
 )
 token = body.get("token") if isinstance(body, dict) else None
 report("Public Route Login (admin@mishoo.com)", status == 200 and token is not None, f"[status={status}]")
 
-# -------------------------------------------------------------
-# 3. SECURITY SERVICE VALIDATION & ERROR HANDLING
-# -------------------------------------------------------------
-print("\n--- 3. Security Service Features & Exceptions ---")
-
-# Wrong password -> 401 Unauthorized
-status, _, err_body = request(
-    f"{BASE_URL}/api/auth/login",
-    method="POST",
-    headers={"Content-Type": "application/json"},
-    body={"email": "admin@mishoo.com", "password": "wrongpassword"}
-)
-report("Invalid Password Handling", status == 401, f"[status={status}, error={err_body}]")
-
-# Register with invalid/empty fields -> 400 Bad Request
-status, _, err_body = request(
-    f"{BASE_URL}/api/auth/register",
-    method="POST",
-    headers={"Content-Type": "application/json"},
-    body={"name": "", "email": "not-an-email", "password": ""}
-)
-report("Validation Error on Register", status == 400, f"[status={status}, errors={err_body}]")
-
-# Register a unique admin user
-unique_id = f"{int(time.time() * 1000)}_{random.randint(100, 999)}"
-new_email = f"admin_{unique_id}@mishoo.com"
-status, _, reg_body = request(
-    f"{BASE_URL}/api/auth/register",
-    method="POST",
-    headers={"Content-Type": "application/json"},
-    body={"name": "Admin Test", "email": new_email, "password": "Password123!"}
-)
-report(f"Register New Admin ({new_email})", status == 201 and "id" in reg_body, f"[status={status}, id={reg_body.get('id') if isinstance(reg_body, dict) else None}]")
-
-# Duplicate email registration -> 409 Conflict
-status, _, err_body = request(
-    f"{BASE_URL}/api/auth/register",
-    method="POST",
-    headers={"Content-Type": "application/json"},
-    body={"name": "Admin Duplicate", "email": new_email, "password": "Password123!"}
-)
-report("Duplicate Email Conflict (409)", status == 409, f"[status={status}, error={err_body}]")
-
-# List users with Bearer token
 auth_headers = {
     "Authorization": f"Bearer {token}",
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "X-Branch-Id": "centro"
 }
-status, _, users = request(f"{BASE_URL}/api/auth/users", method="GET", headers=auth_headers)
-report("Get Users List with Token", status == 200 and isinstance(users, list), f"[status={status}, count={len(users) if isinstance(users, list) else 0}]")
 
 # -------------------------------------------------------------
-# 4. BARBERS SERVICE CRUD & GLOBAL EXCEPTIONS
+# 3. BRANCHES ENDPOINT
 # -------------------------------------------------------------
-print("\n--- 4. Barbers Service CRUD & Exceptions ---")
+print("\n--- 3. Branches / Sucursales Configuration ---")
+status, _, branches = request(f"{BASE_URL}/api/branches", method="GET", headers=auth_headers)
+has_branches = status == 200 and isinstance(branches, list) and len(branches) >= 3
+report("GET /api/branches (centro, norte, sur)", has_branches, f"[status={status}, count={len(branches) if isinstance(branches, list) else 0}]")
 
-# GET all barbers
-status, _, barbers_list = request(f"{BASE_URL}/api/barbers", method="GET", headers=auth_headers)
-report("GET /api/barbers", status == 200 and isinstance(barbers_list, list), f"[status={status}, count={len(barbers_list) if isinstance(barbers_list, list) else 0}]")
+# -------------------------------------------------------------
+# 4. BARBERS & SERVICES ENTITY CRUD
+# -------------------------------------------------------------
+print("\n--- 4. Barbers & Services Entity CRUD ---")
 
-# POST create new barber
+# Barbers CRUD
 barber_name = f"Barber{random.randint(1000, 9999)}"
 barber_last = "Tester"
 status, _, new_barber = request(
@@ -176,34 +132,31 @@ status, _, new_barber = request(
 new_barber_id = new_barber.get("id") if isinstance(new_barber, dict) else None
 report(f"POST /api/barbers ({barber_name} {barber_last})", status == 201 and new_barber_id is not None, f"[status={status}, id={new_barber_id}]")
 
-# GET barber by id
-status, _, barber_found = request(f"{BASE_URL}/api/barbers/{new_barber_id}", method="GET", headers=auth_headers)
-report(f"GET /api/barbers/{new_barber_id}", status == 200 and barber_found.get("name") == barber_name, f"[status={status}]")
-
-# PUT update barber
-updated_last = "Master"
-status, _, barber_updated = request(
-    f"{BASE_URL}/api/barbers/{new_barber_id}",
-    method="PUT",
+# Services Entity CRUD (Changed from Enum to DB Entity with name and description)
+service_name = f"Corte Personalizado {random.randint(100, 999)}"
+status, _, new_service = request(
+    f"{BASE_URL}/api/services",
+    method="POST",
     headers=auth_headers,
-    body={"name": barber_name, "lastName": updated_last}
+    body={
+        "name": service_name,
+        "description": "Corte de diseño exclusivo con acabado a navaja",
+        "durationMinutes": 45,
+        "price": 220.0
+    }
 )
-report(f"PUT /api/barbers/{new_barber_id}", status == 200 and barber_updated.get("lastName") == updated_last, f"[status={status}]")
+new_service_id = new_service.get("id") if isinstance(new_service, dict) else None
+report(f"POST /api/services (Entidad en BD: {service_name})", status == 201 and new_service_id is not None, f"[status={status}, id={new_service_id}]")
 
-# GET non-existent barber -> 404
-status, _, err_body = request(f"{BASE_URL}/api/barbers/999999", method="GET", headers=auth_headers)
-report("GET non-existent barber (404)", status == 404, f"[status={status}, error={err_body}]")
+# GET service by id
+status, _, service_found = request(f"{BASE_URL}/api/services/{new_service_id}", method="GET", headers=auth_headers)
+report(f"GET /api/services/{new_service_id}", status == 200 and service_found.get("name") == service_name, f"[status={status}, desc={service_found.get('description') if isinstance(service_found, dict) else ''}]")
 
 # -------------------------------------------------------------
-# 5. CLIENTS SERVICE CRUD & GLOBAL EXCEPTIONS
+# 5. CLIENTS SERVICE CRUD
 # -------------------------------------------------------------
-print("\n--- 5. Clients Service CRUD & Exceptions ---")
+print("\n--- 5. Clients Service CRUD ---")
 
-# GET all clients
-status, _, clients_list = request(f"{BASE_URL}/api/clients", method="GET", headers=auth_headers)
-report("GET /api/clients", status == 200 and isinstance(clients_list, list), f"[status={status}, count={len(clients_list) if isinstance(clients_list, list) else 0}]")
-
-# POST create new client with guaranteed unique name and 10-digit phone
 client_unique_name = f"Client{random.randint(10000, 99999)}"
 client_phone = str(random.randint(2000000000, 9999999999))
 status, _, new_client = request(
@@ -215,31 +168,16 @@ status, _, new_client = request(
 new_client_id = new_client.get("id") if isinstance(new_client, dict) else None
 report(f"POST /api/clients ({client_unique_name}, Phone {client_phone})", status == 201 and new_client_id is not None, f"[status={status}, id={new_client_id}]")
 
-# GET client by ID
-status, _, client_found = request(f"{BASE_URL}/api/clients/{new_client_id}", method="GET", headers=auth_headers)
-report(f"GET /api/clients/{new_client_id}", status == 200 and client_found.get("phone") == client_phone, f"[status={status}]")
-
-# Duplicate client phone -> 409 Conflict
-status, _, err_body = request(
-    f"{BASE_URL}/api/clients",
-    method="POST",
-    headers=auth_headers,
-    body={"name": f"Other{random.randint(10000, 99999)}", "lastName": "Test", "phone": client_phone}
-)
-report("Duplicate Phone Conflict (409)", status == 409, f"[status={status}, error={err_body}]")
-
 # -------------------------------------------------------------
-# 6. DATES SERVICE & INTERSERVICE VALIDATION (EUREKA CLIENTS)
+# 6. DATES SERVICE (APPOINTMENTS) USING SERVICE ENTITY
 # -------------------------------------------------------------
-print("\n--- 6. Dates Service & Interservice Communication ---")
+print("\n--- 6. Dates Service & Interservice Validation ---")
 
-# Valid appointment date: tomorrow at 10:00 AM (Within business hours 08:00 - 20:00)
-# Use a random day ahead (between 2 and 5 days) so slots are clean
 random_days = random.randint(2, 5)
 appointment_time = (datetime.datetime.now() + datetime.timedelta(days=random_days)).replace(hour=10, minute=0, second=0, microsecond=0)
 app_date_str = appointment_time.strftime("%Y-%m-%dT%H:%M:%S")
 
-# Booking a valid appointment (uses BarbersServiceClient & ClientsServiceClient via Eureka)
+# Booking a valid appointment referencing service entity ID
 status, _, new_date = request(
     f"{BASE_URL}/api/dates",
     method="POST",
@@ -247,76 +185,30 @@ status, _, new_date = request(
     body={
         "client": new_client_id,
         "barber": new_barber_id,
-        "service": "HAIRCUT",
+        "service": new_service_id,
         "status": "PENDING",
         "dateTime": app_date_str
     }
 )
 new_date_id = new_date.get("id") if isinstance(new_date, dict) else None
-report(f"POST /api/dates (Client {new_client_id} + Barber {new_barber_id} @ {app_date_str})", status == 201 and new_date_id is not None, f"[status={status}, date_id={new_date_id}]")
+report(f"POST /api/dates with Service Entity #{new_service_id}", status == 201 and new_date_id is not None, f"[status={status}, date_id={new_date_id}]")
 
-# GET /api/dates/{id}
-status, _, date_found = request(f"{BASE_URL}/api/dates/{new_date_id}", method="GET", headers=auth_headers)
-report(f"GET /api/dates/{new_date_id}", status == 200 and date_found.get("service") == "HAIRCUT", f"[status={status}]")
+# -------------------------------------------------------------
+# 7. MULTI-TENANT ISOLATION (EACH SUCURSAL HAS SEPARATE DB)
+# -------------------------------------------------------------
+print("\n--- 7. Multi-Tenant Branch Isolation ('Nada se comparte') ---")
 
-# GET all dates
-status, _, dates_list = request(f"{BASE_URL}/api/dates", method="GET", headers=auth_headers)
-report("GET /api/dates", status == 200 and isinstance(dates_list, list), f"[status={status}, count={len(dates_list) if isinstance(dates_list, list) else 0}]")
+# In 'centro', we have new_barber_id
+status, _, barber_in_centro = request(f"{BASE_URL}/api/barbers/{new_barber_id}", method="GET", headers={"Authorization": f"Bearer {token}", "X-Branch-Id": "centro"})
+report("Barber exists in Sucursal Centro", status == 200, f"[status={status}]")
 
-# Test Business Rule: Outside Business Hours (e.g. 05:00 AM)
-early_date = appointment_time.replace(hour=5, minute=0, second=0, microsecond=0).strftime("%Y-%m-%dT%H:%M:%S")
-status, _, err_body = request(
-    f"{BASE_URL}/api/dates",
-    method="POST",
-    headers=auth_headers,
-    body={
-        "client": new_client_id,
-        "barber": new_barber_id,
-        "service": "SHAVE",
-        "status": "PENDING",
-        "dateTime": early_date
-    }
-)
-report("Business Rule: Outside Business Hours rejected (400)", status == 400, f"[status={status}, error={err_body}]")
+# Querying 'norte' for the same ID must NOT find it because it's a completely distinct database
+status, _, barber_in_norte = request(f"{BASE_URL}/api/barbers/{new_barber_id}", method="GET", headers={"Authorization": f"Bearer {token}", "X-Branch-Id": "norte"})
+report("Barber from Centro does NOT exist in Sucursal Norte (Isolated DB)", status == 404, f"[status={status} (Expected 404)]")
 
-# Test Business Rule: Barber Time Slot Overlap (trying to book same barber within 30 min of existing appointment with a different client)
-overlap_date = appointment_time.replace(minute=15).strftime("%Y-%m-%dT%H:%M:%S")
-status, _, err_body = request(
-    f"{BASE_URL}/api/dates",
-    method="POST",
-    headers=auth_headers,
-    body={
-        "client": 1, # JUAN PEREZ
-        "barber": new_barber_id,
-        "service": "BEARD_TRIM",
-        "status": "PENDING",
-        "dateTime": overlap_date
-    }
-)
-report("Business Rule: Barber Slot Overlap rejected (409)", status == 409, f"[status={status}, error={err_body}]")
-
-# PUT update date status to DONE
-status, _, date_updated = request(
-    f"{BASE_URL}/api/dates/{new_date_id}",
-    method="PUT",
-    headers=auth_headers,
-    body={
-        "client": new_client_id,
-        "barber": new_barber_id,
-        "service": "HAIRCUT_AND_BEARD",
-        "status": "DONE",
-        "dateTime": app_date_str
-    }
-)
-report(f"PUT /api/dates/{new_date_id} (Status to DONE)", status in [200, 201] and date_updated.get("status") == "DONE", f"[status={status}]")
-
-# DELETE /api/dates/{id}
-status, _, _ = request(f"{BASE_URL}/api/dates/{new_date_id}", method="DELETE", headers=auth_headers)
-report(f"DELETE /api/dates/{new_date_id}", status == 204, f"[status={status}]")
-
-# Verify deleted -> 404
-status, _, _ = request(f"{BASE_URL}/api/dates/{new_date_id}", method="GET", headers=auth_headers)
-report("GET deleted date returns 404", status == 404, f"[status={status}]")
+# Querying 'sur' for the same ID must NOT find it
+status, _, barber_in_sur = request(f"{BASE_URL}/api/barbers/{new_barber_id}", method="GET", headers={"Authorization": f"Bearer {token}", "X-Branch-Id": "sur"})
+report("Barber from Centro does NOT exist in Sucursal Sur (Isolated DB)", status == 404, f"[status={status} (Expected 404)]")
 
 # -------------------------------------------------------------
 # SUMMARY

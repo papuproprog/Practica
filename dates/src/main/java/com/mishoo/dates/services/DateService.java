@@ -2,13 +2,14 @@ package com.mishoo.dates.services;
 
 import com.mishoo.dates.adapters.BarberAdapter;
 import com.mishoo.dates.adapters.ClientAdapter;
+import com.mishoo.dates.adapters.ServiceAdapter;
 import com.mishoo.dates.exceptions.*;
 import com.mishoo.dates.models.Date;
 import com.mishoo.dates.repositories.DateRepository;
-import com.mishoo.dates.schemas.BarberServiceType;
 import com.mishoo.dates.schemas.DataStatus;
 import com.mishoo.dates.schemas.DateRequest;
 import com.mishoo.dates.schemas.DateResponse;
+import com.mishoo.dates.schemas.ServiceResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ public class DateService {
     private final DateRepository dateRepository;
     private final ClientAdapter clientAdapter;
     private final BarberAdapter barberAdapter;
+    private final ServiceAdapter serviceAdapter;
 
     public Optional<DateResponse> getById(Long id) {
         return dateRepository.findById(id)
@@ -42,16 +44,22 @@ public class DateService {
 
     @Transactional
     public DateResponse save(DateRequest dateRequest) {
-        validateDateRangeAndNotice(dateRequest.dateTime());
-        validateBusinessHours(dateRequest.dateTime(), dateRequest.service());
-        validateClientAvailability(dateRequest.client(), dateRequest.dateTime(), null);
-        validateBarberAvailabilityAndOverlap(dateRequest.barber(), dateRequest.dateTime(), dateRequest.service(), null);
-
-        // Validar existencia de cliente y barbero en sus respectivos microservicios
+        // Validar existencia de cliente, barbero y servicio en sus respectivos microservicios
         clientAdapter.getById(dateRequest.client());
         barberAdapter.getById(dateRequest.barber());
+        ServiceResponse serviceResponse = serviceAdapter.getById(dateRequest.service());
+        int duration = (serviceResponse != null && serviceResponse.durationMinutes() != null && serviceResponse.durationMinutes() > 0)
+                ? serviceResponse.durationMinutes()
+                : 30;
 
-        Date createdDate = dateRepository.save(dateRequest.toEntity());
+        validateDateRangeAndNotice(dateRequest.dateTime());
+        validateBusinessHours(dateRequest.dateTime(), duration);
+        validateClientAvailability(dateRequest.client(), dateRequest.dateTime(), null);
+        validateBarberAvailabilityAndOverlap(dateRequest.barber(), dateRequest.dateTime(), duration, null);
+
+        Date dateEntity = dateRequest.toEntity();
+        dateEntity.setServiceDuration(duration);
+        Date createdDate = dateRepository.save(dateEntity);
 
         return DateResponse.fromEntity(createdDate);
     }
@@ -66,17 +74,24 @@ public class DateService {
                 || !Objects.equals(date.getService(), dateRequest.service())
                 || !Objects.equals(date.getDateTime(), dateRequest.dateTime());
 
-        if (scheduleChanged) {
-            validateDateRangeAndNotice(dateRequest.dateTime());
-            validateBusinessHours(dateRequest.dateTime(), dateRequest.service());
-            validateClientAvailability(dateRequest.client(), dateRequest.dateTime(), id);
-            validateBarberAvailabilityAndOverlap(dateRequest.barber(), dateRequest.dateTime(), dateRequest.service(), id);
+        int duration = date.getServiceDuration() != null ? date.getServiceDuration() : 30;
 
+        if (scheduleChanged) {
             clientAdapter.getById(dateRequest.client());
             barberAdapter.getById(dateRequest.barber());
+            ServiceResponse serviceResponse = serviceAdapter.getById(dateRequest.service());
+            duration = (serviceResponse != null && serviceResponse.durationMinutes() != null && serviceResponse.durationMinutes() > 0)
+                    ? serviceResponse.durationMinutes()
+                    : 30;
+
+            validateDateRangeAndNotice(dateRequest.dateTime());
+            validateBusinessHours(dateRequest.dateTime(), duration);
+            validateClientAvailability(dateRequest.client(), dateRequest.dateTime(), id);
+            validateBarberAvailabilityAndOverlap(dateRequest.barber(), dateRequest.dateTime(), duration, id);
         }
 
         date.updateFrom(dateRequest);
+        date.setServiceDuration(duration);
         Date updatedDate = dateRepository.save(date);
         return DateResponse.fromEntity(updatedDate);
     }
@@ -110,7 +125,7 @@ public class DateService {
     }
 
     // Regla de negocio: Horario de atención (08:00 a 20:00) considerando fin del servicio
-    private void validateBusinessHours(LocalDateTime dateTime, BarberServiceType service) {
+    private void validateBusinessHours(LocalDateTime dateTime, int durationMinutes) {
         if (dateTime == null) {
             return;
         }
@@ -122,13 +137,11 @@ public class DateService {
             );
         }
 
-        if (service != null) {
-            LocalDateTime endDateTime = dateTime.plusMinutes(service.getDurationMinutes());
-            if (endDateTime.getHour() > 20 || (endDateTime.getHour() == 20 && endDateTime.getMinute() > 0)) {
-                throw new OutsideBusinessHoursException(
-                        "The selected service ends after closing time (20:00). Please select an earlier time."
-                );
-            }
+        LocalDateTime endDateTime = dateTime.plusMinutes(durationMinutes);
+        if (endDateTime.getHour() > 20 || (endDateTime.getHour() == 20 && endDateTime.getMinute() > 0)) {
+            throw new OutsideBusinessHoursException(
+                    "The selected service ends after closing time (20:00). Please select an earlier time."
+            );
         }
     }
 
@@ -150,12 +163,11 @@ public class DateService {
     }
 
     // Regla 2: Solapamiento de citas considerando duración del servicio para el barbero
-    private void validateBarberAvailabilityAndOverlap(Long barberId, LocalDateTime dateTime, BarberServiceType service, Long excludeDateId) {
+    private void validateBarberAvailabilityAndOverlap(Long barberId, LocalDateTime dateTime, int requestedDuration, Long excludeDateId) {
         if (barberId == null || dateTime == null) {
             return;
         }
 
-        int requestedDuration = (service != null) ? service.getDurationMinutes() : 30;
         LocalDateTime newStart = dateTime;
         LocalDateTime newEnd = dateTime.plusMinutes(requestedDuration);
 
@@ -165,13 +177,13 @@ public class DateService {
 
         for (Date existing : existingAppointments) {
             LocalDateTime existingStart = existing.getDateTime();
-            int existingDuration = (existing.getService() != null) ? existing.getService().getDurationMinutes() : 30;
+            int existingDuration = existing.getServiceDuration() != null ? existing.getServiceDuration() : 30;
             LocalDateTime existingEnd = existingStart.plusMinutes(existingDuration);
 
             // Dos intervalos [A, B] y [C, D] se solapan si A < D y B > C
             if (newStart.isBefore(existingEnd) && newEnd.isAfter(existingStart)) {
                 throw new BarberTimeSlotOverlapException(
-                        "The appointment (" + newStart.toLocalTime() + " - " + newEnd.toLocalTime() + 
+                        "The appointment (" + newStart.toLocalTime() + " - " + newEnd.toLocalTime() +
                         ") overlaps with an existing appointment (" + existingStart.toLocalTime() + " - " + existingEnd.toLocalTime() + ") for barber ID " + barberId
                 );
             }

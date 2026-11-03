@@ -1,18 +1,263 @@
 <div class="min-h-screen bg-[#f5f1eb] text-[#0b1437] lg:flex">
-  <aside class="flex flex-wrap items-center gap-3 bg-[#0b1437] p-4 text-white lg:sticky lg:top-0 lg:h-screen lg:w-60 lg:flex-col lg:items-stretch lg:p-5">
-    <a routerLink="/home" class="font-display text-2xl">BARBER<span class="text-cyan-300">.</span></a>
-    <nav class="flex gap-2 lg:mt-8 lg:flex-col"><a routerLink="/home" class="rounded-xl bg-cyan-500 px-4 py-3 text-sm font-medium">Agenda</a><a routerLink="/appointments" class="rounded-xl px-4 py-3 text-sm text-white/70 hover:bg-white/10">Nueva cita</a></nav>
-    <div class="ml-auto flex items-center gap-2 text-right text-xs text-white/70 lg:ml-0 lg:mt-auto"><span class="max-w-36 truncate">{{api.user()?.email}}</span><button type="button" (click)="logout()" class="rounded-lg px-3 py-2 hover:bg-white/10">Salir</button></div>
+  <!-- Sidebar -->
+  <aside class="flex flex-wrap items-center gap-3 bg-[#0b1437] p-4 text-white lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:flex-col lg:items-stretch lg:p-5">
+    <a routerLink="/home" class="font-display text-2xl tracking-wide">BARBER<span class="text-cyan-300">.</span></a>
+
+    <!-- Branch Selector -->
+    <div class="my-2 rounded-xl bg-white/10 p-3 lg:my-4">
+      <div class="flex items-center justify-between">
+        <p class="text-[10px] font-semibold uppercase tracking-wider text-cyan-300">Sucursal Activa</p>
+        <span class="inline-block h-2 w-2 rounded-full bg-emerald-400"></span>
+      </div>
+      <select [ngModel]="api.branch()" (ngModelChange)="onBranchChange($event)" class="mt-1.5 w-full rounded-lg bg-[#0b1437] px-2.5 py-2 text-xs font-semibold text-white outline-none ring-1 ring-white/20">
+        @for(br of branches; track br.id){
+          <option [value]="br.id">{{br.name}}</option>
+        }
+      </select>
+      <p class="mt-1 text-[10px] text-white/50">Base de datos aislada por sucursal</p>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex gap-2 lg:flex-col">
+      <button type="button" (click)="currentTab = 'agenda'" [class.bg-cyan-500]="currentTab === 'agenda'" [class.text-white]="currentTab === 'agenda'" [class.text-white/70]="currentTab !== 'agenda'" class="rounded-xl px-4 py-3 text-left text-sm font-medium hover:bg-white/10">
+        📅 Agenda
+      </button>
+      <button type="button" (click)="currentTab = 'barbers'" [class.bg-cyan-500]="currentTab === 'barbers'" [class.text-white]="currentTab === 'barbers'" [class.text-white/70]="currentTab !== 'barbers'" class="rounded-xl px-4 py-3 text-left text-sm font-medium hover:bg-white/10">
+        💈 Barberos ({{barberCount}})
+      </button>
+      <button type="button" (click)="currentTab = 'services'" [class.bg-cyan-500]="currentTab === 'services'" [class.text-white]="currentTab === 'services'" [class.text-white/70]="currentTab !== 'services'" class="rounded-xl px-4 py-3 text-left text-sm font-medium hover:bg-white/10">
+        ✂️ Servicios ({{serviceCount}})
+      </button>
+      <a routerLink="/appointments" class="rounded-xl px-4 py-3 text-sm text-cyan-300 hover:bg-white/10">
+        ➕ Nueva cita
+      </a>
+    </nav>
+
+    <!-- User & Logout -->
+    <div class="ml-auto flex items-center gap-2 text-right text-xs text-white/70 lg:ml-0 lg:mt-auto">
+      <span class="max-w-36 truncate">{{api.user()?.email}}</span>
+      <button type="button" (click)="logout()" class="rounded-lg px-2.5 py-1.5 hover:bg-white/10">Salir</button>
+    </div>
   </aside>
-  <main class="min-w-0 flex-1 px-4 py-6 sm:px-8 lg:px-10 lg:py-8"><div class="mx-auto max-w-6xl">
-    <header class="flex flex-wrap items-end justify-between gap-4"><div><p class="text-xs font-semibold uppercase tracking-[.2em] text-cyan-700">Panel de administración</p><h1 class="mt-1 font-display text-3xl sm:text-4xl">Agenda</h1><p class="mt-1 text-sm text-stone-500">Consulta y administra las citas de tu barbería.</p></div><a routerLink="/appointments" class="rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-cyan-600">+ Nueva cita</a></header>
-    @if(error){<p role="alert" class="mt-6 rounded-xl bg-rose-50 p-4 text-sm text-rose-700">{{error}} <a routerLink="/login" class="ml-1 underline">Volver a iniciar sesión</a></p>}
-    @if(notice){<p role="status" class="mt-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-700">{{notice}}</p>}
-    <section class="mt-7 grid gap-4 sm:grid-cols-3"><article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5"><p class="text-xs text-stone-500">Citas de hoy</p><p class="mt-2 font-display text-3xl">{{todayCount}}</p></article><article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5"><p class="text-xs text-stone-500">Pendientes</p><p class="mt-2 font-display text-3xl">{{pendingCount}}</p></article><article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5"><p class="text-xs text-stone-500">Clientes registrados</p><p class="mt-2 font-display text-3xl">{{clientCount}}</p></article></section>
-    <section class="mt-8"><div class="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 class="font-display text-2xl">Próximas citas</h2><select [(ngModel)]="filter" class="rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm"><option value="ALL">Todos los estados</option><option value="PENDING">Pendientes</option><option value="DONE">Completadas</option><option value="CANCELLED">Canceladas</option></select></div>
-      @if(loading){<p class="rounded-2xl bg-white p-6 text-sm text-stone-500">Cargando agenda…</p>}
-      @else if(!filtered.length){<div class="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5"><p class="font-display text-xl">No hay citas para mostrar</p><p class="mt-2 text-sm text-stone-500">Cuando registres una cita aparecerá aquí.</p><a routerLink="/appointments" class="mt-5 inline-block rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-white">Agendar una cita</a></div>}
-      @else {<div class="space-y-3">@for(a of filtered;track a.id){<article class="grid gap-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5"><div class="flex items-start gap-4"><div class="min-w-[4.5rem] rounded-xl bg-[#0b1437] px-3 py-2 text-center text-white"><p class="text-[10px] uppercase text-white/65">{{a.dateTime|date:'MMM'}}</p><p class="font-display text-2xl leading-7">{{a.dateTime|date:'dd'}}</p><p class="text-xs">{{a.dateTime|date:'shortTime'}}</p></div><div class="min-w-0"><p class="truncate font-semibold">{{clientName(a.client)}}</p><p class="mt-1 text-sm text-stone-600">{{serviceNames[a.service]}} <span class="text-stone-400">·</span> {{barberName(a.barber)}}</p><span class="mt-2 inline-block rounded-full px-2.5 py-1 text-[11px] font-medium" [class.bg-amber-100]="a.status==='PENDING'" [class.text-amber-800]="a.status==='PENDING'" [class.bg-emerald-100]="a.status==='DONE'" [class.text-emerald-800]="a.status==='DONE'" [class.bg-rose-100]="a.status==='CANCELLED'" [class.text-rose-800]="a.status==='CANCELLED'">{{a.status==='PENDING'?'Pendiente':a.status==='DONE'?'Completada':'Cancelada'}}</span></div></div><div class="flex flex-wrap items-center gap-2"><select [ngModel]="a.status" (ngModelChange)="setStatus(a,$event)" [ngModelOptions]="{standalone:true}" class="rounded-lg border border-stone-200 bg-white px-2 py-2 text-xs"><option value="PENDING">Pendiente</option><option value="DONE">Completada</option><option value="CANCELLED">Cancelada</option></select><a [routerLink]="['/appointments']" [queryParams]="{id:a.id}" class="rounded-lg bg-stone-100 px-3 py-2 text-xs font-semibold hover:bg-stone-200">Editar</a><button type="button" (click)="cancel(a)" class="rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">Cancelar</button></div></article>}</div>}
-    </section>
-  </div></main>
+
+  <!-- Main Content -->
+  <main class="min-w-0 flex-1 px-4 py-6 sm:px-8 lg:px-10 lg:py-8">
+    <div class="mx-auto max-w-6xl">
+      <header class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[.2em] text-cyan-700">
+            Sucursal: <strong class="text-cyan-900">{{api.branch().toUpperCase()}}</strong>
+          </p>
+          <h1 class="mt-1 font-display text-3xl sm:text-4xl">
+            @if(currentTab === 'agenda') { Agenda de Citas }
+            @else if(currentTab === 'barbers') { Barberos de la Sucursal }
+            @else { Catálogo de Servicios }
+          </h1>
+          <p class="mt-1 text-sm text-stone-500">
+            @if(currentTab === 'agenda') { Consulta y administra las citas agendadas en esta sucursal. }
+            @else if(currentTab === 'barbers') { Da de alta y gestiona los barberos asignados a esta sucursal. }
+            @else { Administra los servicios ofrecidos en esta sucursal (guardados en base de datos). }
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <a routerLink="/appointments" class="rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-cyan-600">
+            + Nueva cita
+          </a>
+        </div>
+      </header>
+
+      @if(error){
+        <p role="alert" class="mt-6 rounded-xl bg-rose-50 p-4 text-sm text-rose-700">{{error}}</p>
+      }
+      @if(notice){
+        <p role="status" class="mt-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-700">{{notice}}</p>
+      }
+
+      <!-- Quick Metrics Cards -->
+      <section class="mt-7 grid gap-4 sm:grid-cols-4">
+        <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+          <p class="text-xs text-stone-500">Citas de hoy</p>
+          <p class="mt-2 font-display text-3xl">{{todayCount}}</p>
+        </article>
+        <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+          <p class="text-xs text-stone-500">Pendientes</p>
+          <p class="mt-2 font-display text-3xl">{{pendingCount}}</p>
+        </article>
+        <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+          <p class="text-xs text-stone-500">Barberos en sucursal</p>
+          <p class="mt-2 font-display text-3xl">{{barberCount}}</p>
+        </article>
+        <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+          <p class="text-xs text-stone-500">Servicios disponibles</p>
+          <p class="mt-2 font-display text-3xl">{{serviceCount}}</p>
+        </article>
+      </section>
+
+      <!-- TAB 1: AGENDA -->
+      @if(currentTab === 'agenda') {
+        <section class="mt-8">
+          <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 class="font-display text-2xl">Próximas citas</h2>
+            <select [(ngModel)]=\"filter\" class="rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm">
+              <option value="ALL">Todos los estados</option>
+              <option value="PENDING">Pendientes</option>
+              <option value="DONE">Completadas</option>
+              <option value="CANCELLED">Canceladas</option>
+            </select>
+          </div>
+
+          @if(loading){
+            <p class="rounded-2xl bg-white p-6 text-sm text-stone-500">Cargando agenda de la sucursal…</p>
+          } @else if(!filtered.length){
+            <div class="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
+              <p class="font-display text-xl">No hay citas en la sucursal {{api.branch().toUpperCase()}}</p>
+              <p class="mt-2 text-sm text-stone-500">Cuando registres una cita para esta sucursal aparecerá aquí.</p>
+              <a routerLink="/appointments" class="mt-5 inline-block rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-white">Agendar una cita</a>
+            </div>
+          } @else {
+            <div class="space-y-3">
+              @for(a of filtered; track a.id){
+                <article class="grid gap-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
+                  <div class="flex items-start gap-4">
+                    <div class="min-w-[4.5rem] rounded-xl bg-[#0b1437] px-3 py-2 text-center text-white">
+                      <p class="text-[10px] uppercase text-white/65">{{a.dateTime|date:'MMM'}}</p>
+                      <p class="font-display text-2xl leading-7">{{a.dateTime|date:'dd'}}</p>
+                      <p class="text-xs">{{a.dateTime|date:'shortTime'}}</p>
+                    </div>
+                    <div class="min-w-0">
+                      <p class="truncate font-semibold">{{clientName(a.client)}}</p>
+                      <p class="mt-1 text-sm text-stone-600">
+                        {{serviceName(a.service)}} <span class="text-stone-400">·</span> {{barberName(a.barber)}}
+                      </p>
+                      <span class="mt-2 inline-block rounded-full px-2.5 py-1 text-[11px] font-medium"
+                        [class.bg-amber-100]="a.status==='PENDING'" [class.text-amber-800]="a.status==='PENDING'"
+                        [class.bg-emerald-100]="a.status==='DONE'" [class.text-emerald-800]="a.status==='DONE'"
+                        [class.bg-rose-100]="a.status==='CANCELLED'" [class.text-rose-800]="a.status==='CANCELLED'">
+                        {{a.status==='PENDING'?'Pendiente':a.status==='DONE'?'Completada':'Cancelada'}}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <select [ngModel]="a.status" (ngModelChange)="setStatus(a, $event)" [ngModelOptions]="{standalone:true}" class="rounded-lg border border-stone-200 bg-white px-2 py-2 text-xs">
+                      <option value="PENDING">Pendiente</option>
+                      <option value="DONE">Completada</option>
+                      <option value="CANCELLED">Cancelada</option>
+                    </select>
+                    <a [routerLink]="['/appointments']" [queryParams]="{id:a.id}" class="rounded-lg bg-stone-100 px-3 py-2 text-xs font-semibold hover:bg-stone-200">Editar</a>
+                    <button type="button" (click)="cancel(a)" class="rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">Cancelar</button>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      }
+
+      <!-- TAB 2: BARBEROS -->
+      @if(currentTab === 'barbers') {
+        <section class="mt-8 space-y-6">
+          <!-- Form to add Barber -->
+          <article class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+            <h2 class="font-display text-xl">Agregar Barbero a Sucursal {{api.branch().toUpperCase()}}</h2>
+            <p class="mt-1 text-xs text-stone-500">Se registrará en la base de datos de esta sucursal.</p>
+            <form (ngSubmit)="addBarber()" class="mt-4 grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
+              <input [(ngModel)]="newBarberName" name="newBarberName" placeholder="Nombre (ej. Roberto)" required class="h-11 rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500">
+              <input [(ngModel)]="newBarberLastName" name="newBarberLastName" placeholder="Apellido (ej. Morales)" required class="h-11 rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500">
+              <button type="submit" [disabled]="savingBarber" class="rounded-xl bg-cyan-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-cyan-600 disabled:opacity-60">
+                {{savingBarber ? 'Guardando…' : '+ Agregar Barbero'}}
+              </button>
+            </form>
+          </article>
+
+          <!-- List of Barbers -->
+          <div>
+            <h3 class="mb-3 font-display text-lg">Barberos Registrados</h3>
+            @if(!barbers.length){
+              <p class="rounded-2xl bg-white p-6 text-sm text-stone-500">No hay barberos en esta sucursal. Agrega uno usando el formulario superior.</p>
+            } @else {
+              <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                @for(b of barbers; track b.id){
+                  <article class="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+                    <div class="flex items-center gap-3">
+                      <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-50 font-display text-lg font-bold text-cyan-800">
+                        {{b.name.slice(0,1)}}{{b.lastName.slice(0,1)}}
+                      </div>
+                      <div>
+                        <p class="font-semibold">{{b.name}} {{b.lastName}}</p>
+                        <p class="text-xs text-stone-400">ID #{{b.id}}</p>
+                      </div>
+                    </div>
+                    <button type="button" (click)="removeBarber(b.id)" class="rounded-lg p-2 text-xs font-semibold text-rose-600 hover:bg-rose-50" title="Eliminar barbero">
+                      ✕ Eliminar
+                    </button>
+                  </article>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- TAB 3: SERVICIOS -->
+      @if(currentTab === 'services') {
+        <section class="mt-8 space-y-6">
+          <!-- Form to add Service -->
+          <article class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+            <h2 class="font-display text-xl">Crear Servicio en Base de Datos (Sucursal {{api.branch().toUpperCase()}})</h2>
+            <p class="mt-1 text-xs text-stone-500">Cada servicio se almacena como entidad en la tabla de servicios de esta sucursal.</p>
+            <form (ngSubmit)="addService()" class="mt-5 space-y-4">
+              <div class="grid gap-4 sm:grid-cols-3">
+                <label class="text-xs font-semibold text-stone-700">Nombre del Servicio
+                  <input [(ngModel)]="newServiceName" name="newServiceName" placeholder="Ej. Corte Degradado + Barba" required class="mt-1 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500">
+                </label>
+                <label class="text-xs font-semibold text-stone-700">Duración estimada (minutos)
+                  <input [(ngModel)]="newServiceDuration" name="newServiceDuration" type="number" min="5" step="5" required class="mt-1 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500">
+                </label>
+                <label class="text-xs font-semibold text-stone-700">Precio ($ MXN)
+                  <input [(ngModel)]="newServicePrice" name="newServicePrice" type="number" min="0" step="10" required class="mt-1 h-11 w-full rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500">
+                </label>
+              </div>
+              <label class="block text-xs font-semibold text-stone-700">Descripción detallada
+                <textarea [(ngModel)]="newServiceDesc" name="newServiceDesc" rows="2" placeholder="Describe qué incluye el servicio, productos utilizados, etc." required class="mt-1 w-full rounded-lg border border-stone-200 p-3 text-sm outline-none focus:border-cyan-500"></textarea>
+              </label>
+              <div class="flex justify-end">
+                <button type="submit" [disabled]="savingService" class="rounded-xl bg-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-cyan-600 disabled:opacity-60">
+                  {{savingService ? 'Guardando servicio…' : '+ Guardar Servicio en BD'}}
+                </button>
+              </div>
+            </form>
+          </article>
+
+          <!-- List of Services -->
+          <div>
+            <h3 class="mb-3 font-display text-lg">Catálogo de Servicios de la Sucursal</h3>
+            @if(!services.length){
+              <p class="rounded-2xl bg-white p-6 text-sm text-stone-500">No hay servicios en esta sucursal. Agrega uno usando el formulario superior.</p>
+            } @else {
+              <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                @for(s of services; track s.id){
+                  <article class="flex flex-col justify-between rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+                    <div>
+                      <div class="flex items-start justify-between gap-2">
+                        <h4 class="font-semibold text-stone-900">{{s.name}}</h4>
+                        <span class="rounded-lg bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800">${{s.price}}</span>
+                      </div>
+                      <p class="mt-2 text-xs text-stone-600 leading-relaxed">{{s.description}}</p>
+                    </div>
+                    <div class="mt-4 flex items-center justify-between border-t border-stone-100 pt-3 text-xs text-stone-400">
+                      <span>⏱ {{s.durationMinutes}} minutos</span>
+                      <button type="button" (click)="removeService(s.id)" class="font-semibold text-rose-600 hover:underline">
+                        Eliminar
+                      </button>
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+    </div>
+  </main>
 </div>

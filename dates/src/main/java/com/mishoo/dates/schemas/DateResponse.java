@@ -9,7 +9,8 @@ public record DateResponse(
         Long barber,
         Long client,
         DataStatus status,
-        BarberServiceType service,
+        Long service,
+        Integer serviceDuration,
         LocalDateTime dateTime
 ) {
 
@@ -20,6 +21,7 @@ public record DateResponse(
                 date.getClient(),
                 date.getStatus(),
                 date.getService(),
+                date.getServiceDuration() != null ? date.getServiceDuration() : 30,
                 date.getDateTime()
         );
     }

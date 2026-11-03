@@ -1,6 +1,5 @@
 package com.mishoo.dates.models;
 
-import com.mishoo.dates.schemas.BarberServiceType;
 import com.mishoo.dates.schemas.DataStatus;
 import com.mishoo.dates.schemas.DateRequest;
 import jakarta.persistence.*;
@@ -33,9 +32,10 @@ public class Date {
     @Enumerated(EnumType.STRING)
     private DataStatus status = DataStatus.PENDING;
 
-    @Enumerated(EnumType.STRING)
     @NotNull
-    private BarberServiceType service;
+    private Long service;
+
+    private Integer serviceDuration = 30;
 
     @NotNull
     private LocalDateTime dateTime;

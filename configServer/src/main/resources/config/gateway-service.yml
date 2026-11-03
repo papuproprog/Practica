@@ -34,7 +34,7 @@ spring:
             - id: barber-service
               uri: lb://BARBER-SERVICE
               predicates:
-                - Path=/api/barbers/**
+                - Path=/api/barbers/**, /api/services/**, /api/branches/**
 
             - id: security-service
               uri: lb://SECURITY-SERVICE
