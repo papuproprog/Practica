@@ -1,65 +1,123 @@
 <main class="grid min-h-screen lg:grid-cols-[43%_57%]">
 
-    <aside class="relative hidden flex-col justify-between overflow-hidden bg-[#0b1437] p-10 text-white lg:flex">
+  <aside class="relative hidden flex-col justify-between overflow-hidden bg-[#0b1437] p-10 text-white lg:flex">
+    <header class="relative z-10 flex items-center gap-3">
+      <span class="font-display text-2xl tracking-wide">BARBER<span class="text-cyan-300">.</span></span>
+    </header>
 
-      <header class="relative z-10 flex items-center gap-3">
-      </header>
-
-      <section class="relative z-10 max-w-md">
-        <p class="text-xs font-semibold uppercase tracking-[.28em] text-cyan-300">Barbería · Agenda</p>
-        <h1 class="mt-5 font-display text-5xl leading-tight">Cada cita,<br>en su lugar.</h1>
-        <p class="mt-5 text-sm leading-6 text-white/65">Administra tu equipo, tus clientes y los servicios desde un solo espacio.</p>
-      </section>
-
-      <footer class="relative z-10 flex items-center gap-3 text-xs text-white/70">
-      </footer>
-    </aside>
-
-    <section class="flex flex-col items-center justify-center bg-[#f5f1eb] px-6 py-12">
-      <div class="w-full max-w-[400px] rounded-2xl bg-white p-8 shadow-xl shadow-stone-900/10 ring-1 ring-black/5">
-
-        <p class="text-xs font-semibold uppercase tracking-[.2em] text-cyan-700">Panel de administración</p>
-        <h2 class="mt-2 font-display text-3xl">{{registering?'Crear cuenta':'Bienvenido'}}</h2>
-
-        <form class="mt-6 space-y-5" (ngSubmit)="submit()">
-
-          <div>
-            <label class="mb-2 block text-xs font-semibold">Correo electrónico</label>
-            <div class="relative">
-              
-              <input
-                [(ngModel)]="email" name="email" type="email" required autocomplete="username"
-                placeholder="Pon tu correo porfa"
-                class="h-11 w-full rounded-lg border border-black/10 pl-5 pr-3 text-xs outline-none transition placeholder:text-tinta/40"
-              />
-            </div>
-          </div>
-
-          <div>
-            <div class="mb-2 flex items-center justify-between">
-              <label for="password" class="text-xs font-semibold">Contraseña</label>
-            </div>
-            <div class="relative">
-          
-              <input [(ngModel)]="password" name="password" type="password" required minlength="6" autocomplete="current-password"
-                class="h-11 w-full rounded-lg border border-black/10 pl-5 pr-10 text-xs outline-none transition"
-              />
-            </div>
-            @if (registering && password.length > 0 && password.length < 6) {
-              <p class="mt-2 text-xs text-rose-700">La contraseña debe tener al menos 6 caracteres.</p>
-            }
-          </div>
-
-          @if (error) { <p role="alert" class="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{{ error }}</p> }
-          @if (success) { <p role="status" class="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{{ success }}</p> }
-          <button
-            type="submit" [disabled]="loading"
-            class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-cyan-500 text-xs font-semibold  text-white transition hover:bg-cyan-700">
-            {{ loading ? 'Procesando…' : registering ? 'Crear cuenta' : 'Ingresar' }}
-          </button>
-        </form>
-        <p class="mt-5 text-center text-xs text-stone-500">{{registering?'¿Ya tienes cuenta?':'¿Primera vez aquí?'}} <button type="button" (click)="toggleMode()" class="font-semibold text-cyan-700">{{registering?'Inicia sesión':'Crear cuenta de administrador'}}</button></p>
-      </div>
-
+    <section class="relative z-10 max-w-md">
+      <p class="text-xs font-semibold uppercase tracking-[.28em] text-cyan-300">Barbería · Gestión por Sucursal</p>
+      <h1 class="mt-5 font-display text-5xl leading-tight">Cada cita,<br>en su lugar.</h1>
+      <p class="mt-5 text-sm leading-6 text-white/65">Administración aislada y segura para cada sucursal independiente.</p>
     </section>
-  </main>
+
+    <footer class="relative z-10 flex items-center gap-3 text-xs text-white/70">
+      <span>Sistema de Gestión Barber</span>
+    </footer>
+  </aside>
+
+  <section class="flex flex-col items-center justify-center bg-[#f5f1eb] px-6 py-12">
+    <div class="w-full max-w-[420px] rounded-2xl bg-white p-8 shadow-xl shadow-stone-900/10 ring-1 ring-black/5">
+
+      <p class="text-xs font-semibold uppercase tracking-[.2em] text-cyan-700">Panel de administración</p>
+      <h2 class="mt-2 font-display text-3xl">{{registering ? 'Crear cuenta' : 'Bienvenido'}}</h2>
+
+      <form class="mt-6 space-y-5" (ngSubmit)="submit()">
+
+        <!-- Selector de Sucursal -->
+        <div>
+          <label class="mb-2 block text-xs font-semibold text-stone-700">Sucursal a Administrar</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              (click)="selectBranch('centro')"
+              [class.bg-[#0b1437]]="branch === 'centro'"
+              [class.text-white]="branch === 'centro'"
+              [class.ring-2]="branch === 'centro'"
+              [class.ring-cyan-500]="branch === 'centro'"
+              [class.bg-stone-50]="branch !== 'centro'"
+              [class.text-stone-700]="branch !== 'centro'"
+              class="flex h-11 items-center justify-center rounded-lg border border-black/10 text-xs font-semibold transition hover:bg-stone-100"
+            >
+              Sucursal Centro
+            </button>
+            <button
+              type="button"
+              (click)="selectBranch('norte')"
+              [class.bg-[#0b1437]]="branch === 'norte'"
+              [class.text-white]="branch === 'norte'"
+              [class.ring-2]="branch === 'norte'"
+              [class.ring-cyan-500]="branch === 'norte'"
+              [class.bg-stone-50]="branch !== 'norte'"
+              [class.text-stone-700]="branch !== 'norte'"
+              class="flex h-11 items-center justify-center rounded-lg border border-black/10 text-xs font-semibold transition hover:bg-stone-100"
+            >
+              Sucursal Norte
+            </button>
+          </div>
+          <p class="mt-1.5 text-[11px] text-stone-500">
+            El administrador es único para su sucursal y sus datos están aislados.
+          </p>
+        </div>
+
+        <div>
+          <label class="mb-2 block text-xs font-semibold text-stone-700">Correo electrónico</label>
+          <div class="relative">
+            <input
+              [(ngModel)]="email"
+              (ngModelChange)="onEmailChange()"
+              name="email"
+              type="email"
+              required
+              autocomplete="username"
+              placeholder="ej. admin@centro.com o admin@norte.com"
+              class="h-11 w-full rounded-lg border border-black/10 px-3 text-xs outline-none transition focus:border-cyan-500"
+            />
+          </div>
+        </div>
+
+        <div>
+          <div class="mb-2 flex items-center justify-between">
+            <label for="password" class="text-xs font-semibold text-stone-700">Contraseña</label>
+          </div>
+          <div class="relative">
+            <input
+              [(ngModel)]="password"
+              name="password"
+              type="password"
+              required
+              minlength="6"
+              autocomplete="current-password"
+              class="h-11 w-full rounded-lg border border-black/10 px-3 text-xs outline-none transition focus:border-cyan-500"
+            />
+          </div>
+          @if (registering && password.length > 0 && password.length < 6) {
+            <p class="mt-2 text-xs text-rose-700">La contraseña debe tener al menos 6 caracteres.</p>
+          }
+        </div>
+
+        @if (error) {
+          <p role="alert" class="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{{ error }}</p>
+        }
+        @if (success) {
+          <p role="status" class="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{{ success }}</p>
+        }
+
+        <button
+          type="submit"
+          [disabled]="loading"
+          class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-cyan-600 text-xs font-semibold text-white transition hover:bg-cyan-700 disabled:opacity-60"
+        >
+          {{ loading ? 'Procesando…' : registering ? 'Crear cuenta' : 'Ingresar a ' + (branch === 'norte' ? 'Sucursal Norte' : 'Sucursal Centro') }}
+        </button>
+      </form>
+
+      <p class="mt-5 text-center text-xs text-stone-500">
+        {{ registering ? '¿Ya tienes cuenta?' : '¿Primera vez aquí?' }}
+        <button type="button" (click)="toggleMode()" class="font-semibold text-cyan-700 hover:underline">
+          {{ registering ? 'Inicia sesión' : 'Crear cuenta de administrador' }}
+        </button>
+      </p>
+    </div>
+  </section>
+</main>

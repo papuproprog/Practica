@@ -1,20 +1,35 @@
 <div class="min-h-screen bg-[#f5f1eb] text-[#0b1437] antialiased lg:flex">
+  <!-- Sidebar -->
   <aside class="flex flex-wrap items-center gap-3 bg-[#0b1437] p-4 text-white lg:sticky lg:top-0 lg:h-screen lg:w-60 lg:flex-col lg:items-stretch lg:p-5">
     <a routerLink="/home" class="font-display text-2xl">BARBER<span class="text-cyan-300">.</span></a>
 
+    <!-- Branch Display (Admin unique to sucursal) -->
     <div class="my-2 rounded-xl bg-white/10 p-3 lg:my-4">
-      <p class="text-[10px] font-semibold uppercase tracking-wider text-cyan-300">Sucursal Activa</p>
-      <select [ngModel]="api.branch()" (ngModelChange)="onBranchChange($event)" class="mt-1 w-full rounded-lg bg-[#0b1437] px-2 py-1.5 text-xs font-semibold text-white outline-none ring-1 ring-white/20">
-        @for(br of branches; track br.id){
-          <option [value]="br.id">{{br.name}}</option>
-        }
-      </select>
+      <div class="flex items-center justify-between">
+        <p class="text-[10px] font-semibold uppercase tracking-wider text-cyan-300">Sucursal Asignada</p>
+        <span class="inline-block h-2 w-2 rounded-full bg-emerald-400"></span>
+      </div>
+      <p class="mt-1.5 font-display text-base font-bold text-white tracking-wide">{{branchLabel}}</p>
+      <p class="mt-0.5 text-[10px] text-white/50">Base de datos exclusiva</p>
     </div>
 
+    <!-- Navigation (Consistent across entire app) -->
     <nav class="flex gap-2 lg:mt-2 lg:flex-col">
-      <a routerLink="/home" class="rounded-xl px-4 py-3 text-sm text-white/70 hover:bg-white/10">Agenda</a>
-      <a routerLink="/appointments" class="rounded-xl bg-cyan-500 px-4 py-3 text-sm font-medium text-white">Nueva cita</a>
+      <a [routerLink]="['/home']" [queryParams]="{tab: 'agenda'}" class="rounded-xl px-4 py-3 text-left text-sm font-medium text-white/70 hover:bg-white/10">
+        Agenda
+      </a>
+      <a [routerLink]="['/home']" [queryParams]="{tab: 'barbers'}" class="rounded-xl px-4 py-3 text-left text-sm font-medium text-white/70 hover:bg-white/10">
+        Barberos ({{barbers.length}})
+      </a>
+      <a [routerLink]="['/home']" [queryParams]="{tab: 'services'}" class="rounded-xl px-4 py-3 text-left text-sm font-medium text-white/70 hover:bg-white/10">
+        Servicios ({{services.length}})
+      </a>
+      <a routerLink="/appointments" class="rounded-xl bg-cyan-500 px-4 py-3 text-left text-sm font-medium text-white">
+        Nueva cita
+      </a>
     </nav>
+
+    <!-- User & Logout -->
     <div class="ml-auto flex items-center gap-2 text-right text-xs text-white/70 lg:ml-0 lg:mt-auto">
       <span class="max-w-32 truncate">{{api.user()?.email}}</span>
       <button type="button" (click)="logout()" class="rounded-lg px-2 py-1 hover:bg-white/10">Salir</button>
@@ -25,8 +40,8 @@
     <div class="mx-auto max-w-6xl">
       <header class="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[.2em] text-cyan-700">Agenda · Sucursal {{api.branch().toUpperCase()}}</p>
-          <h1 class="mt-1 font-display text-3xl sm:text-4xl">{{editId?'Editar cita':'Agendar cita'}}</h1>
+          <p class="text-xs font-semibold uppercase tracking-[.2em] text-cyan-700">Agenda · {{branchLabel}}</p>
+          <h1 class="mt-1 font-display text-3xl sm:text-4xl">{{editId ? 'Editar cita' : 'Agendar cita'}}</h1>
           <p class="mt-1 text-sm text-stone-500">Captura fecha, barbero, cliente y servicio en tu base de datos de sucursal.</p>
         </div>
         <a routerLink="/home" class="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-medium hover:bg-stone-50">Volver a la agenda</a>
@@ -62,7 +77,7 @@
             <div class="mb-4 flex items-center justify-between">
               <h2 class="font-display text-xl">2. Barbero</h2>
               <button type="button" (click)="newBarber = !newBarber" class="text-xs font-semibold text-cyan-700 hover:underline">
-                {{newBarber ? 'Elegir barbero existente' : '+ Registrar nuevo barbero'}}
+                {{newBarber ? 'Elegir barbero existente' : 'Registrar nuevo barbero'}}
               </button>
             </div>
 
@@ -86,7 +101,7 @@
                 </select>
               </label>
               @if(!barbers.length){
-                <p class="mt-2 text-xs text-amber-700">No hay barberos en esta sucursal. Usa "+ Registrar nuevo barbero" para añadir uno.</p>
+                <p class="mt-2 text-xs text-amber-700">No hay barberos en esta sucursal. Usa "Registrar nuevo barbero" para añadir uno.</p>
               }
             }
           </section>
@@ -96,7 +111,7 @@
             <div class="mb-4 flex items-center justify-between">
               <h2 class="font-display text-xl">3. Servicio</h2>
               <button type="button" (click)="newService = !newService" class="text-xs font-semibold text-cyan-700 hover:underline">
-                {{newService ? 'Elegir servicio del catálogo' : '+ Registrar nuevo servicio'}}
+                {{newService ? 'Elegir servicio del catálogo' : 'Registrar nuevo servicio'}}
               </button>
             </div>
 
@@ -145,7 +160,7 @@
             <div class="mb-4 flex items-center justify-between">
               <h2 class="font-display text-xl">4. Cliente</h2>
               <button type="button" (click)="newClient = !newClient" class="text-xs font-semibold text-cyan-700 hover:underline">
-                {{newClient ? 'Elegir cliente existente' : '+ Registrar nuevo cliente'}}
+                {{newClient ? 'Elegir cliente existente' : 'Registrar nuevo cliente'}}
               </button>
             </div>
 
@@ -171,7 +186,7 @@
                 </select>
               </label>
               @if(!clients.length){
-                <p class="mt-2 text-xs text-stone-500">Aún no hay clientes en esta sucursal. Usa "+ Registrar nuevo cliente".</p>
+                <p class="mt-2 text-xs text-stone-500">Aún no hay clientes en esta sucursal. Usa "Registrar nuevo cliente".</p>
               }
             }
           </section>
@@ -183,7 +198,7 @@
           <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
             <h2 class="font-display text-xl">Resumen de Cita</h2>
             <div class="mt-2 inline-block rounded-full bg-cyan-100 px-2.5 py-1 text-xs font-semibold text-cyan-800">
-              Sucursal: {{api.branch().toUpperCase()}}
+              {{branchLabel}}
             </div>
 
             <p class="mt-4 text-sm font-semibold">
@@ -217,8 +232,7 @@
               </div>
             </dl>
 
-            @if(editId){
-              <label class="mt-5 block text-xs font-semibold">Estado de la cita
+            @if(editId){\n              <label class="mt-5 block text-xs font-semibold">Estado de la cita
                 <select [(ngModel)]="status" name="status" class="mt-2 h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm">
                   <option value="PENDING">Pendiente</option>
                   <option value="DONE">Completada</option>
@@ -237,7 +251,7 @@
 
       <!-- Listado reciente -->
       <section class="mt-10">
-        <h2 class="mb-4 font-display text-2xl">Citas recientes (Sucursal {{api.branch().toUpperCase()}})</h2>
+        <h2 class="mb-4 font-display text-2xl">Citas recientes ({{branchLabel}})</h2>
         @if(!appointments.length && !loading){
           <p class="rounded-xl bg-white p-5 text-sm text-stone-500">Todavía no hay citas registradas en esta sucursal.</p>
         }

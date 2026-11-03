@@ -3,7 +3,7 @@ import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { Api, Appointment, AppointmentPayload, AppointmentStatus, Barber, Branch, Client, ServiceItem } from '../../../../core/api';
+import { Api, Appointment, AppointmentPayload, AppointmentStatus, Barber, Client, ServiceItem } from '../../../../core/api';
 
 @Component({
   imports: [CommonModule, FormsModule, RouterLink],
@@ -16,7 +16,6 @@ export class AppointmentPageComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly changeDetector = inject(ChangeDetectorRef);
 
-  branches: Branch[] = [];
   clients: Client[] = [];
   barbers: Barber[] = [];
   services: ServiceItem[] = [];
@@ -53,7 +52,15 @@ export class AppointmentPageComponent implements OnInit {
   error = '';
   notice = '';
 
+  get branchLabel(): string {
+    return this.api.branch() === 'norte' ? 'Sucursal Norte' : 'Sucursal Centro';
+  }
+
   ngOnInit(): void {
+    if (!this.api.loggedIn()) {
+      void this.router.navigate(['/login']);
+      return;
+    }
     this.loadData();
   }
 
@@ -61,14 +68,12 @@ export class AppointmentPageComponent implements OnInit {
     this.loading = true;
     this.error = '';
     forkJoin({
-      branches: this.api.getBranches(),
       clients: this.api.getClients(),
       barbers: this.api.getBarbers(),
       services: this.api.getServices(),
       appointments: this.api.getAppointments()
     }).subscribe({
       next: data => {
-        this.branches = data.branches;
         this.clients = data.clients;
         this.barbers = data.barbers;
         this.services = data.services;
@@ -102,12 +107,6 @@ export class AppointmentPageComponent implements OnInit {
         this.changeDetector.markForCheck();
       }
     });
-  }
-
-  onBranchChange(branchId: string): void {
-    this.api.setBranch(branchId);
-    this.notice = `Sucursal cambiada a: ${branchId.toUpperCase()}`;
-    this.loadData();
   }
 
   get selectedService(): ServiceItem | undefined {

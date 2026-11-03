@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { Api, Appointment, AppointmentStatus, Barber, Branch, Client, ServiceItem } from '../../../../core/api';
+import { Api, Appointment, AppointmentStatus, Barber, Client, ServiceItem } from '../../../../core/api';
 
 @Component({
   imports: [CommonModule, FormsModule, RouterLink],
@@ -13,9 +13,9 @@ import { Api, Appointment, AppointmentStatus, Barber, Branch, Client, ServiceIte
 export class HomePageComponent implements OnInit {
   readonly api = inject(Api);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly changeDetector = inject(ChangeDetectorRef);
 
-  branches: Branch[] = [];
   appointments: Appointment[] = [];
   clients: Client[] = [];
   barbers: Barber[] = [];
@@ -39,26 +39,42 @@ export class HomePageComponent implements OnInit {
   newServicePrice = 150;
   savingService = false;
 
+  get branchLabel(): string {
+    return this.api.branch() === 'norte' ? 'Sucursal Norte' : 'Sucursal Centro';
+  }
+
   ngOnInit(): void {
     if (!this.api.loggedIn()) {
       void this.router.navigate(['/login']);
       return;
     }
+
+    this.route.queryParamMap.subscribe(params => {
+      const tab = params.get('tab');
+      if (tab === 'barbers' || tab === 'services' || tab === 'agenda') {
+        this.currentTab = tab;
+        this.changeDetector.markForCheck();
+      }
+    });
+
     this.loadData();
+  }
+
+  setTab(tab: 'agenda' | 'barbers' | 'services'): void {
+    this.currentTab = tab;
+    void this.router.navigate([], { queryParams: { tab }, queryParamsHandling: 'merge' });
   }
 
   loadData(): void {
     this.loading = true;
     this.error = '';
     forkJoin({
-      branches: this.api.getBranches(),
       appointments: this.api.getAppointments(),
       clients: this.api.getClients(),
       barbers: this.api.getBarbers(),
       services: this.api.getServices()
     }).subscribe({
       next: d => {
-        this.branches = d.branches;
         this.appointments = d.appointments.sort((a, b) => a.dateTime.localeCompare(b.dateTime));
         this.clients = d.clients;
         this.barbers = d.barbers;
@@ -74,12 +90,6 @@ export class HomePageComponent implements OnInit {
         this.changeDetector.markForCheck();
       }
     });
-  }
-
-  onBranchChange(branchId: string): void {
-    this.api.setBranch(branchId);
-    this.notice = `Sucursal activa cambiada a: ${branchId.toUpperCase()}`;
-    this.loadData();
   }
 
   get filtered() {

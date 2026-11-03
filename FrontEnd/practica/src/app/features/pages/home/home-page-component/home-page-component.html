@@ -3,33 +3,50 @@
   <aside class="flex flex-wrap items-center gap-3 bg-[#0b1437] p-4 text-white lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:flex-col lg:items-stretch lg:p-5">
     <a routerLink="/home" class="font-display text-2xl tracking-wide">BARBER<span class="text-cyan-300">.</span></a>
 
-    <!-- Branch Selector -->
+    <!-- Branch Display (Admin unique to sucursal) -->
     <div class="my-2 rounded-xl bg-white/10 p-3 lg:my-4">
       <div class="flex items-center justify-between">
-        <p class="text-[10px] font-semibold uppercase tracking-wider text-cyan-300">Sucursal Activa</p>
+        <p class="text-[10px] font-semibold uppercase tracking-wider text-cyan-300">Sucursal Asignada</p>
         <span class="inline-block h-2 w-2 rounded-full bg-emerald-400"></span>
       </div>
-      <select [ngModel]="api.branch()" (ngModelChange)="onBranchChange($event)" class="mt-1.5 w-full rounded-lg bg-[#0b1437] px-2.5 py-2 text-xs font-semibold text-white outline-none ring-1 ring-white/20">
-        @for(br of branches; track br.id){
-          <option [value]="br.id">{{br.name}}</option>
-        }
-      </select>
-      <p class="mt-1 text-[10px] text-white/50">Base de datos aislada por sucursal</p>
+      <p class="mt-1.5 font-display text-base font-bold text-white tracking-wide">{{branchLabel}}</p>
+      <p class="mt-0.5 text-[10px] text-white/50">Base de datos exclusiva</p>
     </div>
 
     <!-- Navigation -->
     <nav class="flex gap-2 lg:flex-col">
-      <button type="button" (click)="currentTab = 'agenda'" [class.bg-cyan-500]="currentTab === 'agenda'" [class.text-white]="currentTab === 'agenda'" [class.text-white/70]="currentTab !== 'agenda'" class="rounded-xl px-4 py-3 text-left text-sm font-medium hover:bg-white/10">
-        📅 Agenda
+      <button
+        type="button"
+        (click)="setTab('agenda')"
+        [class.bg-cyan-500]="currentTab === 'agenda'"
+        [class.text-white]="currentTab === 'agenda'"
+        [class.text-white/70]="currentTab !== 'agenda'"
+        class="rounded-xl px-4 py-3 text-left text-sm font-medium hover:bg-white/10"
+      >
+        Agenda
       </button>
-      <button type="button" (click)="currentTab = 'barbers'" [class.bg-cyan-500]="currentTab === 'barbers'" [class.text-white]="currentTab === 'barbers'" [class.text-white/70]="currentTab !== 'barbers'" class="rounded-xl px-4 py-3 text-left text-sm font-medium hover:bg-white/10">
-        💈 Barberos ({{barberCount}})
+      <button
+        type="button"
+        (click)="setTab('barbers')"
+        [class.bg-cyan-500]="currentTab === 'barbers'"
+        [class.text-white]="currentTab === 'barbers'"
+        [class.text-white/70]="currentTab !== 'barbers'"
+        class="rounded-xl px-4 py-3 text-left text-sm font-medium hover:bg-white/10"
+      >
+        Barberos ({{barberCount}})
       </button>
-      <button type="button" (click)="currentTab = 'services'" [class.bg-cyan-500]="currentTab === 'services'" [class.text-white]="currentTab === 'services'" [class.text-white/70]="currentTab !== 'services'" class="rounded-xl px-4 py-3 text-left text-sm font-medium hover:bg-white/10">
-        ✂️ Servicios ({{serviceCount}})
+      <button
+        type="button"
+        (click)="setTab('services')"
+        [class.bg-cyan-500]="currentTab === 'services'"
+        [class.text-white]="currentTab === 'services'"
+        [class.text-white/70]="currentTab !== 'services'"
+        class="rounded-xl px-4 py-3 text-left text-sm font-medium hover:bg-white/10"
+      >
+        Servicios ({{serviceCount}})
       </button>
-      <a routerLink="/appointments" class="rounded-xl px-4 py-3 text-sm text-cyan-300 hover:bg-white/10">
-        ➕ Nueva cita
+      <a routerLink="/appointments" class="rounded-xl px-4 py-3 text-left text-sm text-cyan-300 hover:bg-white/10">
+        Nueva cita
       </a>
     </nav>
 
@@ -46,7 +63,7 @@
       <header class="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p class="text-xs font-semibold uppercase tracking-[.2em] text-cyan-700">
-            Sucursal: <strong class="text-cyan-900">{{api.branch().toUpperCase()}}</strong>
+            Sucursal: <strong class="text-cyan-900">{{branchLabel.toUpperCase()}}</strong>
           </p>
           <h1 class="mt-1 font-display text-3xl sm:text-4xl">
             @if(currentTab === 'agenda') { Agenda de Citas }
@@ -61,7 +78,7 @@
         </div>
         <div class="flex items-center gap-3">
           <a routerLink="/appointments" class="rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-cyan-600">
-            + Nueva cita
+            Nueva cita
           </a>
         </div>
       </header>
@@ -110,7 +127,7 @@
             <p class="rounded-2xl bg-white p-6 text-sm text-stone-500">Cargando agenda de la sucursal…</p>
           } @else if(!filtered.length){
             <div class="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
-              <p class="font-display text-xl">No hay citas en la sucursal {{api.branch().toUpperCase()}}</p>
+              <p class="font-display text-xl">No hay citas en {{branchLabel}}</p>
               <p class="mt-2 text-sm text-stone-500">Cuando registres una cita para esta sucursal aparecerá aquí.</p>
               <a routerLink="/appointments" class="mt-5 inline-block rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-white">Agendar una cita</a>
             </div>
@@ -158,13 +175,13 @@
         <section class="mt-8 space-y-6">
           <!-- Form to add Barber -->
           <article class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-            <h2 class="font-display text-xl">Agregar Barbero a Sucursal {{api.branch().toUpperCase()}}</h2>
+            <h2 class="font-display text-xl">Agregar Barbero a {{branchLabel}}</h2>
             <p class="mt-1 text-xs text-stone-500">Se registrará en la base de datos de esta sucursal.</p>
             <form (ngSubmit)="addBarber()" class="mt-4 grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
               <input [(ngModel)]="newBarberName" name="newBarberName" placeholder="Nombre (ej. Roberto)" required class="h-11 rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500">
               <input [(ngModel)]="newBarberLastName" name="newBarberLastName" placeholder="Apellido (ej. Morales)" required class="h-11 rounded-lg border border-stone-200 px-3 text-sm outline-none focus:border-cyan-500">
               <button type="submit" [disabled]="savingBarber" class="rounded-xl bg-cyan-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-cyan-600 disabled:opacity-60">
-                {{savingBarber ? 'Guardando…' : '+ Agregar Barbero'}}
+                {{savingBarber ? 'Guardando…' : 'Agregar Barbero'}}
               </button>
             </form>
           </article>
@@ -188,7 +205,7 @@
                       </div>
                     </div>
                     <button type="button" (click)="removeBarber(b.id)" class="rounded-lg p-2 text-xs font-semibold text-rose-600 hover:bg-rose-50" title="Eliminar barbero">
-                      ✕ Eliminar
+                      Eliminar
                     </button>
                   </article>
                 }
@@ -203,7 +220,7 @@
         <section class="mt-8 space-y-6">
           <!-- Form to add Service -->
           <article class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-            <h2 class="font-display text-xl">Crear Servicio en Base de Datos (Sucursal {{api.branch().toUpperCase()}})</h2>
+            <h2 class="font-display text-xl">Crear Servicio en Base de Datos ({{branchLabel}})</h2>
             <p class="mt-1 text-xs text-stone-500">Cada servicio se almacena como entidad en la tabla de servicios de esta sucursal.</p>
             <form (ngSubmit)="addService()" class="mt-5 space-y-4">
               <div class="grid gap-4 sm:grid-cols-3">
@@ -222,7 +239,7 @@
               </label>
               <div class="flex justify-end">
                 <button type="submit" [disabled]="savingService" class="rounded-xl bg-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-cyan-600 disabled:opacity-60">
-                  {{savingService ? 'Guardando servicio…' : '+ Guardar Servicio en BD'}}
+                  {{savingService ? 'Guardando servicio…' : 'Guardar Servicio en BD'}}
                 </button>
               </div>
             </form>
@@ -245,7 +262,7 @@
                       <p class="mt-2 text-xs text-stone-600 leading-relaxed">{{s.description}}</p>
                     </div>
                     <div class="mt-4 flex items-center justify-between border-t border-stone-100 pt-3 text-xs text-stone-400">
-                      <span>⏱ {{s.durationMinutes}} minutos</span>
+                      <span>{{s.durationMinutes}} minutos</span>
                       <button type="button" (click)="removeService(s.id)" class="font-semibold text-rose-600 hover:underline">
                         Eliminar
                       </button>
