@@ -123,14 +123,19 @@ public class MultiTenantConfig {
             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM users");
             if (rs.next() && rs.getInt(1) == 0) {
                 BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+                String adminHash = encoder.encode("admin123");
+                String centroHash = encoder.encode("centro123");
+                String norteHash = encoder.encode("norte123");
                 String mishooHash = encoder.encode("adminpassword123");
-                String barberHash = encoder.encode("admin123");
 
                 stmt.execute(String.format("""
                     INSERT INTO users (email, password, role, created_at, updated_at) VALUES
                     ('admin@mishoo.com', '%s', 'ADMIN', NOW(), NOW()),
-                    ('admin@barber.com', '%s', 'ADMIN', NOW(), NOW());
-                """, mishooHash, barberHash));
+                    ('admin@barber.com', '%s', 'ADMIN', NOW(), NOW()),
+                    ('admin@centro.com', '%s', 'ADMIN', NOW(), NOW()),
+                    ('admin@norte.com', '%s', 'ADMIN', NOW(), NOW())
+                    ON CONFLICT (email) DO NOTHING;
+                """, mishooHash, adminHash, centroHash, norteHash));
             }
 
         } catch (Exception e) {
