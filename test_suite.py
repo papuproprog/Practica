@@ -96,10 +96,10 @@ status, _, body = request(
     f"{BASE_URL}/api/auth/login",
     method="POST",
     headers={"Content-Type": "application/json", "X-Branch-Id": "centro"},
-    body={"email": "admin@mishoo.com", "password": "adminpassword123"}
+    body={"email": "admin@centro.com", "password": "centro123"}
 )
 token = body.get("token") if isinstance(body, dict) else None
-report("Public Route Login (admin@mishoo.com)", status == 200 and token is not None, f"[status={status}]")
+report("Public Route Login (admin@centro.com)", status == 200 and token is not None, f"[status={status}]")
 
 auth_headers = {
     "Authorization": f"Bearer {token}",
