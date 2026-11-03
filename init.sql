@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS users (
 
 INSERT INTO users (email, password, role, created_at, updated_at) VALUES
 ('admin@centro.com', '$2a$10$7klm7.VfnjnklGozpe/3gePmKl.6prOa/cina1FAqQ4xQ3XLLXeEC', 'ADMIN', NOW(), NOW()),
-('admin@barber.com', '$2a$10$szK6M/EODoiK1izWBVCLn.ak8miZqi4B4/x/5wUIcmgucficMYe1.', 'ADMIN', NOW(), NOW())
+('admin@barber.com', '$2a$10$szK6M/EODoiK1izWBVCLn.ak8miZqi4B4/x/5wUIcmgucficMYe1.', 'ADMIN', NOW(), NOW()),
+('superadmin@barber.com', '$2a$10$xhyT2gZCMCT30DASa8r/V./jKlT66.VBl5nL07eH9Quke.FsKHxVa', 'SUPERADMIN', NOW(), NOW())
 ON CONFLICT (email) DO NOTHING;
 
 -- Barbers Centro (Barberos y Servicios)

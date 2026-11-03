@@ -47,7 +47,7 @@ export class GlobalAdminPageComponent implements OnInit {
       return;
     }
 
-    if (this.api.user()?.role !== 'ADMIN') {
+    if (this.api.user()?.role !== 'SUPERADMIN') {
       void this.router.navigate(['/home']);
       return;
     }
